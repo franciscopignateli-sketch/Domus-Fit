@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+/* Definir as cores do tema diretamente no CSS */
+@theme {
+  /* Amarelo vibrante para destaques */
+  --color-gym-yellow: #FACC15; 
+  /* Preto profundo para fundos */
+  --color-gym-black: #0A0A0A;
+  /* Um cinzento escuro para secções secundárias para dar contraste */
+  --color-gym-dark: #171717; 
+}
+
+/* Estilos globais */
+body {
+    /* Fundo preto, texto branco por defeito */
+    @apply bg-gym-black text-gray-100 font-sans;
+    scroll-behavior: smooth; /* Para o botão de subir ao topo funcionar suavemente */
+}
