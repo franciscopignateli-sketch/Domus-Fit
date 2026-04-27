@@ -7,5 +7,13 @@ cd nome-da-pasta
 # 3. Instalar as dependências (OBRIGATÓRIO)
 npm install
 
-# 4. Iniciar o site
+# 4. Preparar xampp
+Abrir a pasta C:\xampp\htdocs
+Criar uma pasta domus_backend
+Copiar as pastas do git pra la
+
+# 5. Preparar php my admin
+importar base dados domus-fit.sql no php my admin
+
+# 6. Iniciar o site
 npm run dev

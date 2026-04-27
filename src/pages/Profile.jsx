@@ -1,13 +1,34 @@
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 function Profile() {
-  // Dados fictícios do utilizador
-  const user = {
-    name: "Afonso Reis",
-    plan: "Pro Member",
-    since: "Jan 2024",
-    id: "DOMUS-8821"
-  };
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Tenta ir buscar o utilizador ao localStorage
+    const savedUser = localStorage.getItem('domus_user');
+    
+    if (!savedUser) {
+      // Se não existir, expulsa para a página de login
+      navigate('/login'); 
+    } else {
+      // Se existir, converte o texto guardado de volta para um objeto
+      const parsedUser = JSON.parse(savedUser);
+      
+      // Juntamos os dados reais da BD com os dados fictícios do ginásio
+      setUser({
+        name: parsedUser.name,
+        email: parsedUser.email,
+        plan: "Pro Member",
+        since: "Hoje",
+        id: "DOMUS-" + Math.floor(1000 + Math.random() * 9000) // Gera um ID aleatório
+      });
+    }
+  }, [navigate]);
+
+  // Enquanto verifica o login, não mostra nada para não piscar o ecrã
+  if (!user) return null; 
 
   return (
     <div className="min-h-screen bg-gym-black pt-24 pb-12 px-6">
@@ -16,7 +37,6 @@ function Profile() {
         {/* Cabeçalho */}
         <div className="flex items-center gap-6 mb-12">
           <div className="w-20 h-20 bg-gray-700 rounded-full overflow-hidden border-2 border-gym-yellow">
-             {/* Avatar Placeholder */}
              <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop" alt="User" className="w-full h-full object-cover" />
           </div>
           <div>
@@ -31,7 +51,6 @@ function Profile() {
           <div className="bg-gym-dark p-8 rounded-xl border border-white/10 flex flex-col items-center text-center shadow-2xl">
             <h3 className="text-xl font-bold text-white uppercase mb-6">Passe de Entrada</h3>
             <div className="bg-white p-4 rounded-lg mb-4">
-              {/* API que gera QR Code real baseada no ID do user */}
               <img 
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${user.id}`} 
                 alt="QR Code" 

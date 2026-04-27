@@ -1,15 +1,57 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // Importar useNavigate
+import { useNavigate } from 'react-router-dom';
 
 function Auth() {
   const [isLogin, setIsLogin] = useState(true);
-  const navigate = useNavigate(); // Hook para mudar de página
+  const navigate = useNavigate();
 
-  const handleAuth = (e) => {
-    e.preventDefault(); // Impede o recarregamento
-    // Simulação: Se for Login, vai para o perfil
-    // Futuramente, aqui ligarias à Base de Dados
-    navigate('/profile'); 
+  // Estados para guardar o que o utilizador escreve
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errorMsg, setErrorMsg] = useState(''); // Para mostrar erros
+
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    setErrorMsg(''); // Limpar erros antigos
+
+    // Escolhe o ficheiro PHP certo dependendo se é Login ou Registo
+    const endpoint = isLogin ? 'login.php' : 'register.php';
+    const url = `http://localhost/domus_backend/${endpoint}`;
+
+    // Prepara os dados para enviar
+    const payload = isLogin ? { email, password } : { name, email, password };
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(data.message); // Mensagem de sucesso temporária
+        localStorage.setItem('domus_user', JSON.stringify(data.user));
+        if (!isLogin) {
+          // Se registou com sucesso, muda para a aba de login
+          setIsLogin(true);
+          setPassword('');
+        } else {
+          // Se fez login com sucesso, vai para o perfil
+          navigate('/profile');
+        }
+      } else {
+        // Mostra o erro vindo do PHP
+        setErrorMsg(data.message);
+      }
+    } catch (error) {
+      console.error("Erro na comunicação com o servidor:", error);
+      setErrorMsg("Erro ao ligar ao servidor. Verifica se o XAMPP está ligado.");
+    }
   };
 
   return (
@@ -23,23 +65,50 @@ function Auth() {
           <span className="text-gym-yellow">Domus</span>
         </h2>
 
-        {/* Adicionei o handleAuth no onSubmit */}
+        {/* Mostra mensagem de erro se houver */}
+        {errorMsg && (
+            <div className="bg-red-500/20 border border-red-500 text-red-500 p-3 rounded mb-4 text-sm text-center">
+                {errorMsg}
+            </div>
+        )}
+
         <form className="space-y-6" onSubmit={handleAuth}>
           {!isLogin && (
             <div>
               <label className="block text-gray-400 text-sm mb-2">Nome Completo</label>
-              <input type="text" className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" placeholder="O teu nome" required />
+              <input 
+                type="text" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" 
+                placeholder="O teu nome" 
+                required={!isLogin} 
+              />
             </div>
           )}
           
           <div>
             <label className="block text-gray-400 text-sm mb-2">Email</label>
-            <input type="email" className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" placeholder="email@exemplo.com" required />
+            <input 
+              type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" 
+              placeholder="email@exemplo.com" 
+              required 
+            />
           </div>
 
           <div>
             <label className="block text-gray-400 text-sm mb-2">Password</label>
-            <input type="password" className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" placeholder="******" required />
+            <input 
+              type="password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" 
+              placeholder="******" 
+              required 
+            />
           </div>
 
           <button className="w-full bg-gym-yellow text-gym-black font-bold py-3 rounded uppercase tracking-widest hover:bg-white transition-colors cursor-pointer mt-4">
@@ -50,7 +119,11 @@ function Auth() {
         <div className="mt-8 text-center text-gray-400 text-sm">
           {isLogin ? "Ainda não és membro?" : "Já tens conta?"}
           <button 
-            onClick={() => setIsLogin(!isLogin)}
+            type="button"
+            onClick={() => {
+                setIsLogin(!isLogin);
+                setErrorMsg('');
+            }}
             className="ml-2 text-gym-yellow font-bold hover:underline cursor-pointer"
           >
             {isLogin ? "Regista-te aqui" : "Faz Login"}
