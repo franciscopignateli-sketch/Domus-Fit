@@ -1,7 +1,7 @@
-import HeroCarousel from './HeroCarousel';
-import DescriptionSection from './DescriptionSection';
-import ClassesSection from './ClassesSection';
-import ScrollToTop from './ScrollToTop';
+import HeroCarousel from '../components/home/HeroCarousel';
+import DescriptionSection from '../components/home/DescriptionSection';
+import ClassesSection from '../components/home/ClassesSection';
+import ScrollToTop from '../components/layout/ScrollToTop';
 
 function Home() {
   return (

@@ -1,4 +1,4 @@
-import ScrollToTop from './ScrollToTop'; // Podemos reutilizar o botão aqui também se quiseres
+import ScrollToTop from '../components/layout/ScrollToTop'; // Podemos reutilizar o botão aqui também se quiseres
 
 function About() {
   const trainers = [

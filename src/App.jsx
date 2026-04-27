@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Navbar from './Navbar';
-import Home from './Home';
-import About from './About';
-import Schedule from './Schedule';
-import Auth from './Auth';
-import Membership from './Membership';
-import Tools from './Tools';
-import Profile from './Profile'; // <--- 1. CONFIRMA SE ESTE IMPORT ESTÁ AQUI
+import Navbar from './components/layout/Navbar';
+import Home from './pages/Home';
+import About from './pages/About';
+import Schedule from './pages/Schedule';
+import Auth from './pages/Auth';
+import Membership from './pages/Membership';
+import Tools from './pages/Tools';
+import Profile from './pages/Profile'; 
 
 function App() {
   return (
@@ -19,7 +19,6 @@ function App() {
         <Route path="/membership" element={<Membership />} />
         <Route path="/tools" element={<Tools />} />
         
-        {/* 2. CONFIRMA SE ESTA LINHA EXISTE */}
         <Route path="/profile" element={<Profile />} /> 
         
         <Route path="/login" element={<Auth />} />
