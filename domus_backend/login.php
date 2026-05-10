@@ -1,7 +1,4 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Headers: Content-Type");
-header("Access-Control-Allow-Methods: POST");
 
 require 'db.php';
 
@@ -21,7 +18,7 @@ if (isset($data->email) && isset($data->password)) {
         echo json_encode([
             "success" => true, 
             "message" => "Login com sucesso!", 
-            "user" => ["name" => $user['name'], "email" => $user['email']]
+            "user" => ["id" => $user['id'], "name" => $user['name'], "email" => $user['email']]
         ]);
     } else {
         echo json_encode(["success" => false, "message" => "Email ou password incorretos."]);
