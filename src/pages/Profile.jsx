@@ -1,33 +1,57 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { fetchUserBookings } from '../services/gymApi'; // <-- Importamos a nova função!
 
 function Profile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [nextClass, setNextClass] = useState(null); // Estado para guardar a próxima aula real
 
   useEffect(() => {
-    // Tenta ir buscar o utilizador ao localStorage
     const savedUser = localStorage.getItem('domus_user');
     
     if (!savedUser) {
-      // Se não existir, expulsa para a página de login
       navigate('/login'); 
-    } else {
-      // Se existir, converte o texto guardado de volta para um objeto
-      const parsedUser = JSON.parse(savedUser);
+      return;
+    } 
+
+    const parsedUser = JSON.parse(savedUser);
+    
+    // Atualizamos para usar o ID real que vem da BD
+    setUser({
+      id: parsedUser.id, 
+      name: parsedUser.name,
+      email: parsedUser.email,
+      plan: "Pro Member", // Vamos tornar isto real na fase das subscrições
+      since: "Hoje",
+      memberNumber: `DOMUS-${String(parsedUser.id).padStart(4, '0')}` // Ex: DOMUS-0012
+    });
+
+    // Função para carregar as reservas da base de dados
+    const loadBookings = async () => {
+      const data = await fetchUserBookings(parsedUser.id);
       
-      // Juntamos os dados reais da BD com os dados fictícios do ginásio
-      setUser({
-        name: parsedUser.name,
-        email: parsedUser.email,
-        plan: "Pro Member",
-        since: "Hoje",
-        id: "DOMUS-" + Math.floor(1000 + Math.random() * 9000) // Gera um ID aleatório
-      });
-    }
+      if (data.success && data.bookings.length > 0) {
+        // Como o PHP já ordena pela data mais próxima, a primeira aula (index 0) é a próxima!
+        const upcoming = data.bookings[0];
+        
+        // Formatar a data e hora para ficar bonito no ecrã
+        const dateObj = new Date(upcoming.class_datetime);
+        const dateString = dateObj.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' });
+        const timeString = dateObj.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+
+        setNextClass({
+          name: upcoming.class_name,
+          trainer: upcoming.trainer_name,
+          date: `${dateString}, às ${timeString}`
+        });
+      }
+    };
+
+    loadBookings();
+
   }, [navigate]);
 
-  // Enquanto verifica o login, não mostra nada para não piscar o ecrã
   if (!user) return null; 
 
   return (
@@ -47,32 +71,43 @@ function Profile() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           
-          {/* Cartão de Acesso (QR Code) */}
+          {/* Cartão de Acesso (QR Code Real) */}
           <div className="bg-gym-dark p-8 rounded-xl border border-white/10 flex flex-col items-center text-center shadow-2xl">
             <h3 className="text-xl font-bold text-white uppercase mb-6">Passe de Entrada</h3>
             <div className="bg-white p-4 rounded-lg mb-4">
               <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${user.id}`} 
+                // O QR Code agora usa o ID real do utilizador!
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${user.memberNumber}`} 
                 alt="QR Code" 
                 className="w-40 h-40"
               />
             </div>
-            <p className="text-sm text-gray-400 font-mono tracking-widest">{user.id}</p>
+            <p className="text-sm text-gray-400 font-mono tracking-widest">{user.memberNumber}</p>
             <p className="text-xs text-gray-500 mt-2">Usa este código no torniquete.</p>
           </div>
 
-          {/* Estatísticas Rápidas (Barras CSS simples) */}
           <div className="md:col-span-2 space-y-6">
             
-            {/* Próximo Treino */}
+            {/* Próximo Treino (Dinâmico) */}
             <div className="bg-linear-to-r from-gym-dark to-black p-6 rounded-xl border-l-4 border-gym-yellow">
-              <h3 className="text-lg font-bold text-gray-400 uppercase mb-1">Próxima Aula</h3>
+              <h3 className="text-lg font-bold text-gray-400 uppercase mb-3">Próxima Aula</h3>
               <div className="flex justify-between items-end">
                 <div>
-                   <p className="text-2xl font-bold text-white">Cross Training</p>
-                   <p className="text-gray-300">Hoje, 18:00 • Com João Silva</p>
+                  {nextClass ? (
+                    <>
+                      <p className="text-2xl font-bold text-white">{nextClass.name}</p>
+                      <p className="text-gray-300">{nextClass.date} • Com {nextClass.trainer}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-xl font-bold text-gray-500">Nenhuma aula agendada</p>
+                      <p className="text-sm text-gray-400 mt-1">Ainda não marcaste o teu próximo treino.</p>
+                    </>
+                  )}
                 </div>
-                <button className="text-gym-yellow font-bold text-sm hover:underline cursor-pointer">Ver Agenda &rarr;</button>
+                <Link to="/my-bookings" className="text-gym-yellow font-bold text-sm hover:underline cursor-pointer">
+                  Ver Agenda &rarr;
+                </Link>
               </div>
             </div>
 

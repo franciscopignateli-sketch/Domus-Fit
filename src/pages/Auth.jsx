@@ -5,22 +5,30 @@ function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
 
-  // Estados para guardar o que o utilizador escreve
+  // Estados para o Registo
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  
+  // Estado para o Login (pode ser email OU username)
+  const [loginInput, setLoginInput] = useState('');
+  
+  // Estados comuns
   const [password, setPassword] = useState('');
-  const [errorMsg, setErrorMsg] = useState(''); // Para mostrar erros
+  const [errorMsg, setErrorMsg] = useState(''); 
 
   const handleAuth = async (e) => {
     e.preventDefault();
-    setErrorMsg(''); // Limpar erros antigos
+    setErrorMsg(''); 
 
-    // Escolhe o ficheiro PHP certo dependendo se é Login ou Registo
     const endpoint = isLogin ? 'login.php' : 'register.php';
     const url = `http://localhost/domus_backend/${endpoint}`;
 
-    // Prepara os dados para enviar
-    const payload = isLogin ? { email, password } : { name, email, password };
+    // Prepara os dados para enviar dependendo se é Login ou Registo
+    // NOTA: O login_input tem de corresponder exatamente ao que o PHP está à espera
+    const payload = isLogin 
+      ? { login_input: loginInput, password } 
+      : { name, username, email, password };
 
     try {
       const response = await fetch(url, {
@@ -34,18 +42,19 @@ function Auth() {
       const data = await response.json();
 
       if (data.success) {
-        alert(data.message); // Mensagem de sucesso temporária
-        localStorage.setItem('domus_user', JSON.stringify(data.user));
         if (!isLogin) {
-          // Se registou com sucesso, muda para a aba de login
+          // Se registou com sucesso, limpa os campos e muda para login
+          alert("Conta criada com sucesso! Podes fazer login agora.");
           setIsLogin(true);
           setPassword('');
+          setLoginInput(username); // Preenche logo o input de login para facilitar a vida ao user
         } else {
-          // Se fez login com sucesso, vai para o perfil
+          // Se fez login com sucesso, guarda a sessão e vai para o perfil
+          localStorage.setItem('domus_user', JSON.stringify(data.user));
           navigate('/profile');
         }
       } else {
-        // Mostra o erro vindo do PHP
+        // Mostra o erro vindo do PHP (ex: "Username já existe")
         setErrorMsg(data.message);
       }
     } catch (error) {
@@ -65,7 +74,6 @@ function Auth() {
           <span className="text-gym-yellow">Domus</span>
         </h2>
 
-        {/* Mostra mensagem de erro se houver */}
         {errorMsg && (
             <div className="bg-red-500/20 border border-red-500 text-red-500 p-3 rounded mb-4 text-sm text-center">
                 {errorMsg}
@@ -73,32 +81,64 @@ function Auth() {
         )}
 
         <form className="space-y-6" onSubmit={handleAuth}>
-          {!isLogin && (
+          
+          {/* CAMPOS APENAS PARA REGISTO */}
+          {!isLogin ? (
+            <>
+              <div>
+                <label className="block text-gray-400 text-sm mb-2">Nome Completo</label>
+                <input 
+                  type="text" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" 
+                  placeholder="O teu nome" 
+                  required 
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-400 text-sm mb-2">Username</label>
+                <input 
+                  type="text" 
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase())} // Força minúsculas
+                  className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" 
+                  placeholder="ex: joao_silva" 
+                  minLength={3}
+                  maxLength={20}
+                  required 
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-400 text-sm mb-2">Email</label>
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" 
+                  placeholder="email@exemplo.com" 
+                  required 
+                />
+              </div>
+            </>
+          ) : (
+            /* CAMPO APENAS PARA LOGIN */
             <div>
-              <label className="block text-gray-400 text-sm mb-2">Nome Completo</label>
+              <label className="block text-gray-400 text-sm mb-2">Email ou Username</label>
               <input 
                 type="text" 
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={loginInput}
+                onChange={(e) => setLoginInput(e.target.value)}
                 className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" 
-                placeholder="O teu nome" 
-                required={!isLogin} 
+                placeholder="O teu email ou username" 
+                required 
               />
             </div>
           )}
-          
-          <div>
-            <label className="block text-gray-400 text-sm mb-2">Email</label>
-            <input 
-              type="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" 
-              placeholder="email@exemplo.com" 
-              required 
-            />
-          </div>
 
+          {/* PASSWORD (Comum aos dois) */}
           <div>
             <label className="block text-gray-400 text-sm mb-2">Password</label>
             <input 
@@ -107,8 +147,10 @@ function Auth() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" 
               placeholder="******" 
+              minLength={6}
               required 
             />
+            {!isLogin && <p className="text-xs text-gray-500 mt-1">Mínimo de 6 caracteres.</p>}
           </div>
 
           <button className="w-full bg-gym-yellow text-gym-black font-bold py-3 rounded uppercase tracking-widest hover:bg-white transition-colors cursor-pointer mt-4">
@@ -123,6 +165,7 @@ function Auth() {
             onClick={() => {
                 setIsLogin(!isLogin);
                 setErrorMsg('');
+                setPassword(''); // Limpar a pass por segurança ao trocar de aba
             }}
             className="ml-2 text-gym-yellow font-bold hover:underline cursor-pointer"
           >

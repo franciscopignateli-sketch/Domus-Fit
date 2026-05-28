@@ -7,21 +7,41 @@ import Auth from './pages/Auth';
 import Membership from './pages/Membership';
 import Tools from './pages/Tools';
 import Profile from './pages/Profile'; 
+import MyBookings from './pages/MyBookings'; // <-- Importa a página nova
+import ProtectedRoute from './routes/ProtectedRoute';
 
 function App() {
   return (
     <BrowserRouter>
       <Navbar />
+      
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
-        <Route path="/schedule" element={<Schedule />} />
         <Route path="/membership" element={<Membership />} />
         <Route path="/tools" element={<Tools />} />
-        
-        <Route path="/profile" element={<Profile />} /> 
-        
         <Route path="/login" element={<Auth />} />
+        <Route path="/schedule" element={<Schedule />} />
+        
+        {/* ROTAS PROTEGIDAS */}
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Nova Rota Protegida para a página das tuas aulas */}
+        <Route 
+          path="/my-bookings" 
+          element={
+            <ProtectedRoute>
+              <MyBookings />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </BrowserRouter>
   );

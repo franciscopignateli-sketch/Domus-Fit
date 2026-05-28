@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 11-Maio-2026 às 00:58
+-- Tempo de geração: 28-Maio-2026 às 21:31
 -- Versão do servidor: 10.4.27-MariaDB
 -- versão do PHP: 8.2.0
 
@@ -34,6 +34,14 @@ CREATE TABLE `bookings` (
   `booked_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Extraindo dados da tabela `bookings`
+--
+
+INSERT INTO `bookings` (`id`, `user_id`, `class_id`, `booked_at`) VALUES
+(5, 1, 6, '2026-05-28 19:18:43'),
+(7, 1, 4, '2026-05-28 19:28:09');
+
 -- --------------------------------------------------------
 
 --
@@ -55,7 +63,11 @@ CREATE TABLE `classes` (
 INSERT INTO `classes` (`id`, `name`, `trainer_id`, `class_datetime`, `max_capacity`) VALUES
 (1, 'WOD Crossfit', 1, '2026-05-12 18:00:00', 20),
 (2, 'Yoga Flow', 2, '2026-05-13 08:00:00', 15),
-(3, 'Hiit Cardio', 1, '2026-05-14 19:00:00', 2);
+(3, 'Hiit Cardio', 1, '2026-05-14 19:00:00', 2),
+(4, 'WOD Crossfit', 1, '2026-06-01 18:00:00', 20),
+(5, 'Yoga Flow', 2, '2026-06-02 08:00:00', 15),
+(6, 'Hiit Cardio', 1, '2026-06-03 19:00:00', 2),
+(7, 'Pilates Avançado', 2, '2026-06-04 10:30:00', 12);
 
 -- --------------------------------------------------------
 
@@ -86,6 +98,7 @@ INSERT INTO `trainers` (`id`, `name`, `specialty`) VALUES
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
+  `username` varchar(50) NOT NULL,
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
@@ -95,9 +108,8 @@ CREATE TABLE `users` (
 -- Extraindo dados da tabela `users`
 --
 
-INSERT INTO `users` (`id`, `name`, `email`, `password`, `created_at`) VALUES
-(1, 'pigy', 'pigy@gmail.com', '$2y$10$RrBM/jEY1uqivT3DGsVrDOzciMry.oq.v30OpYAhP688COH8DgTmi', '2026-04-27 20:47:30'),
-(2, '1234', '123@gmail.com', '$2y$10$vpsGKWpeBL.YaL5kMZ8z1eZEgLmoUKWbRYNGTChfoZVeeZb/Rx6ve', '2026-04-28 20:58:38');
+INSERT INTO `users` (`id`, `name`, `username`, `email`, `password`, `created_at`) VALUES
+(1, 'Pigy', 'pigy', 'pigy@gmail.com', '$2y$10$o6A9F7f4ZBJzJ69hIfrpJO4y9lfD6ylIxGXYBbwcV9fS5zjPd8CQK', '2026-05-28 19:05:59');
 
 --
 -- Índices para tabelas despejadas
@@ -129,7 +141,8 @@ ALTER TABLE `trainers`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `email` (`email`);
+  ADD UNIQUE KEY `email` (`email`),
+  ADD UNIQUE KEY `unique_username` (`username`);
 
 --
 -- AUTO_INCREMENT de tabelas despejadas
@@ -139,13 +152,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT de tabela `bookings`
 --
 ALTER TABLE `bookings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de tabela `classes`
 --
 ALTER TABLE `classes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de tabela `trainers`
@@ -157,7 +170,7 @@ ALTER TABLE `trainers`
 -- AUTO_INCREMENT de tabela `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- Restrições para despejos de tabelas

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchGymClasses, bookClass, cancelClass } from '../api/gymApi'; // Importar do novo ficheiro!
+import { fetchGymClasses, bookClass, cancelClass } from '../services/gymApi'; 
 
 function Schedule() {
   const [classes, setClasses] = useState([]);
-  const [loadingClassId, setLoadingClassId] = useState(null); // Sabe qual o botão a carregar
+  const [loadingClassId, setLoadingClassId] = useState(null);
   const navigate = useNavigate();
   
   const userString = localStorage.getItem('domus_user');
@@ -15,19 +15,25 @@ function Schedule() {
   }, []);
 
   const loadClasses = async () => {
-    const data = await fetchGymClasses();
+    const data = await fetchGymClasses(user ? user.id : null);
 
     if (data.success) {
       const formattedClasses = data.classes.map(cls => {
         const dateObj = new Date(cls.class_datetime);
+        
+        // Formata a data (Ex: "01 jun")
+        const dateString = dateObj.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' });
+        // Formata a hora (Ex: "18:00")
         const timeString = dateObj.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+        
         return {
           id: cls.id,
+          date: dateString, // <--- Adicionada a data aqui
           time: timeString,
           name: cls.class_name,
           trainer: cls.trainer_name,
           spots: cls.max_capacity - cls.current_bookings,
-          booked: false 
+          booked: cls.is_booked > 0 
         };
       });
       setClasses(formattedClasses);
@@ -41,18 +47,15 @@ function Schedule() {
       return;
     }
 
-    // Ativa o estado de loading APENAS para este botão específico
     setLoadingClassId(cls.id);
 
     let data;
-    // Usa as funções que importaste do teu gymApi.js
     if (cls.booked) {
         data = await cancelClass(user.id, cls.id);
     } else {
         data = await bookClass(user.id, cls.id);
     }
 
-    // Desativa o loading (pois já fomos e voltámos da base de dados)
     setLoadingClassId(null);
 
     if (data.success) {
@@ -93,7 +96,13 @@ function Schedule() {
                 }`}
               >
                 <div className="flex items-center gap-6 mb-4 md:mb-0 w-full md:w-auto">
-                  <div className="text-2xl font-bold text-gym-yellow font-mono">{cls.time}</div>
+                  
+                  {/* AQUI ESTÁ A ATUALIZAÇÃO DO BLOCO DE DATA E HORA */}
+                  <div className="text-xl font-bold text-gym-yellow font-mono text-center">
+                    <div>{cls.date}</div>
+                    <div className="text-2xl">{cls.time}</div>
+                  </div>
+
                   <div>
                     <h3 className="text-xl font-bold text-white uppercase">{cls.name}</h3>
                     <p className="text-gray-400 text-sm">Treinador: {cls.trainer}</p>
@@ -113,14 +122,14 @@ function Schedule() {
                     disabled={(cls.spots <= 0 && !cls.booked) || loadingClassId === cls.id}
                     className={`px-6 py-2 rounded font-bold uppercase tracking-wider text-sm transition-all cursor-pointer min-w-30 ${
                       cls.booked
-                        ? "bg-transparent border border-gym-yellow text-gym-yellow hover:bg-gym-yellow hover:text-black"
+                        ? "bg-transparent border border-gym-yellow text-gym-yellow hover:bg-red-500 hover:text-white hover:border-red-500"
                         : cls.spots <= 0
                           ? "bg-gray-800 text-gray-500 cursor-not-allowed"
                           : "bg-gym-yellow text-gym-black hover:bg-white hover:text-black"
                     } ${loadingClassId === cls.id ? "opacity-50 cursor-wait" : ""}`}
                   >
                     {loadingClassId === cls.id 
-                        ? "Agurade..." 
+                        ? "Aguarde..." 
                         : cls.booked ? "Cancelar" : cls.spots <= 0 ? "Cheio" : "Reservar"}
                   </button>
                 </div>
