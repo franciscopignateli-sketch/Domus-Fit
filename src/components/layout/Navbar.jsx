@@ -3,18 +3,25 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 function Navbar() {
   const navigate = useNavigate();
-  const location = useLocation(); // Ajuda a detetar mudanças de página
+  const location = useLocation();
   const [isLogged, setIsLogged] = useState(false);
+  const [userRole, setUserRole] = useState(null); // Guardar o papel do utilizador
 
   useEffect(() => {
-    // Sempre que a página muda, verifica se o user está logado
-    const user = localStorage.getItem('domus_user');
-    setIsLogged(!!user); // Converte para verdadeiro ou falso
-  }, [location]); // Re-executa sempre que a rota muda
+    const userString = localStorage.getItem('domus_user');
+    if (userString) {
+      const user = JSON.parse(userString);
+      setIsLogged(true);
+      setUserRole(user.role); // 'user', 'trainer' ou 'admin'
+    } else {
+      setIsLogged(false);
+      setUserRole(null);
+    }
+  }, [location]);
 
   const handleLogout = () => {
-    localStorage.removeItem('domus_user'); // Apaga os dados
-    navigate('/login'); // Manda para o login
+    localStorage.removeItem('domus_user');
+    navigate('/login');
   };
 
   return (
@@ -31,12 +38,17 @@ function Navbar() {
           <Link to="/membership" className="hover:text-gym-yellow transition-all">Planos</Link>
           <Link to="/tools" className="hover:text-gym-yellow transition-all">Ferramentas</Link>
           
-          {/* Só mostra o Perfil se estiver logado */}
           {isLogged && (
             <Link to="/profile" className="hover:text-gym-yellow transition-all">Perfil</Link>
           )}
+
+          {/* SÓ MOSTRA SE O UTILIZADOR FOR ADMIN */}
+          {isLogged && userRole === 'admin' && (
+            <Link to="/admin" className="text-gym-yellow font-bold hover:underline transition-all underline-offset-4 decoration-2">
+              Painel Admin
+            </Link>
+          )}
           
-          {/* Botão Dinâmico: Login ou Logout */}
           {isLogged ? (
             <button 
               onClick={handleLogout}

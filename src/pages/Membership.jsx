@@ -1,78 +1,108 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { subscribePlan } from '../services/gymApi';
 
 function Membership() {
+  const navigate = useNavigate();
+  const [loadingPlan, setLoadingPlan] = useState(null);
+  
+  const userString = localStorage.getItem('domus_user');
+  const user = userString ? JSON.parse(userString) : null;
+
+  const handleSubscribe = async (planName) => {
+    if (!user) {
+      alert("Precisas de fazer login para subscrever um plano!");
+      navigate('/login');
+      return;
+    }
+
+    setLoadingPlan(planName);
+    const data = await subscribePlan(user.id, planName);
+    setLoadingPlan(null);
+
+    if (data.success) {
+      alert(`Parabéns! Subscreveste o ${planName}. O teu plano é válido até ${data.plan_data.plan_expires}.`);
+      // Redireciona o utilizador para o perfil para ele ver as novidades
+      navigate('/profile');
+    } else {
+      alert(data.message);
+    }
+  };
+
   const plans = [
     {
-      name: "Básico",
-      price: "29,90",
-      features: ["Acesso 07h - 22h", "Área de Musculação", "Balneários", "Sem fidelização"],
-      highlight: false
+      name: "Iron Plan",
+      price: "29€",
+      period: "/ mês",
+      features: ["Acesso livre horário reduzido", "1 Aula de grupo por semana", "Balneários"],
+      color: "border-gray-500",
+      btnColor: "bg-gray-500 hover:bg-gray-400 text-white"
     },
     {
-      name: "Pro",
-      price: "39,90",
-      features: ["Acesso 24/7", "Acesso a todas as Aulas", "Área de Musculação", "Consultas Nutrição (1x/mês)", "Convida um amigo (Sábados)"],
-      highlight: true
+      name: "Gold Plan",
+      price: "39€",
+      period: "/ mês",
+      features: ["Acesso livre trânsito total", "Aulas de grupo ilimitadas", "Avaliação Física Mensal", "Toalha incluída"],
+      color: "border-gym-yellow",
+      btnColor: "bg-gym-yellow hover:bg-white text-black"
     },
     {
-      name: "Elite",
-      price: "59,90",
-      features: ["Acesso Total 24/7", "Acompanhamento PT (2x/mês)", "Plano de Treino Personalizado", "Acesso Zona Spa & Sauna", "Toalha e Kit Banho incluídos"],
-      highlight: false
+      name: "Elite Plan",
+      price: "59€",
+      period: "/ mês",
+      features: ["Tudo do Gold Plan", "1 Sessão Personal Trainer/semana", "Acesso ao Spa", "Nutrição incluída"],
+      color: "border-blue-500",
+      btnColor: "bg-blue-500 hover:bg-blue-400 text-white"
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gym-black py-20 px-6">
-      <div className="container mx-auto">
+    <div className="min-h-screen bg-gym-black pt-24 pb-12 px-6">
+      <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white uppercase italic mb-4">
-            Investe em <span className="text-gym-yellow">Ti</span>
+            Escolhe o teu <span className="text-gym-yellow">Plano</span>
           </h1>
-          <p className="text-gray-400 text-lg">Escolhe o plano que se adapta aos teus objetivos.</p>
+          <p className="text-gray-400 max-w-2xl mx-auto">
+            Sem fidelização. Pagas apenas 30 dias de cada vez. Junta-te à Domus Fit e transforma a tua vida hoje.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center max-w-6xl mx-auto">
-          {plans.map((plan, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {plans.map((plan) => (
             <div 
-              key={index}
-              className={`relative p-8 rounded-xl border flex flex-col h-full ${
-                plan.highlight 
-                  ? "bg-white/5 border-gym-yellow shadow-[0_0_30px_rgba(250,204,21,0.15)] md:scale-110 z-10" 
-                  : "bg-gym-dark border-white/5 text-gray-300"
-              }`}
+              key={plan.name} 
+              className={`bg-gym-dark p-8 rounded-2xl border-2 flex flex-col transition-transform hover:-translate-y-2 ${plan.color} ${plan.name === "Gold Plan" ? "shadow-[0_0_30px_rgba(252,211,77,0.15)] relative" : ""}`}
             >
-              {plan.highlight && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gym-yellow text-gym-black font-bold px-4 py-1 rounded-full text-sm uppercase tracking-widest">
+              {/* Etiqueta de destaque no plano Gold */}
+              {plan.name === "Gold Plan" && (
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gym-yellow text-black font-bold px-4 py-1 rounded-full text-sm uppercase tracking-wider">
                   Mais Popular
                 </div>
               )}
-              
-              <h3 className="text-2xl font-bold uppercase mb-4 text-white">{plan.name}</h3>
+
+              <h3 className="text-2xl font-bold text-white mb-2 uppercase">{plan.name}</h3>
               <div className="mb-6">
-                <span className="text-4xl font-bold text-white">{plan.price}€</span>
-                <span className="text-sm text-gray-500"> /mês</span>
+                <span className="text-5xl font-extrabold text-white">{plan.price}</span>
+                <span className="text-gray-400 ml-2">{plan.period}</span>
               </div>
-              
+
               <ul className="space-y-4 mb-8 grow">
-                {plan.features.map((feat, i) => (
-                  <li key={i} className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-gym-yellow shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                    <span className="text-sm">{feat}</span>
+                {plan.features.map((feature, i) => (
+                  <li key={i} className="flex items-center text-gray-300">
+                    <span className="text-gym-yellow mr-3">✔</span>
+                    {feature}
                   </li>
                 ))}
               </ul>
 
-              <Link 
-                to="/login"
-                className={`w-full py-3 rounded font-bold uppercase tracking-widest text-center transition-colors ${
-                  plan.highlight 
-                    ? "bg-gym-yellow text-gym-black hover:bg-white" 
-                    : "border border-white/20 hover:border-gym-yellow hover:text-gym-yellow"
-                }`}
+              <button 
+                onClick={() => handleSubscribe(plan.name)}
+                disabled={loadingPlan === plan.name}
+                className={`w-full py-4 rounded font-bold uppercase tracking-widest transition-colors cursor-pointer ${plan.btnColor} ${loadingPlan === plan.name ? "opacity-50 cursor-wait" : ""}`}
               >
-                Aderir Agora
-              </Link>
+                {loadingPlan === plan.name ? "A processar..." : "Subscrever"}
+              </button>
             </div>
           ))}
         </div>

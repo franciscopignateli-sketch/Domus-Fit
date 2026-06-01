@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 28-Maio-2026 às 21:31
+-- Tempo de geração: 01-Jun-2026 às 02:01
 -- Versão do servidor: 10.4.27-MariaDB
 -- versão do PHP: 8.2.0
 
@@ -67,7 +67,8 @@ INSERT INTO `classes` (`id`, `name`, `trainer_id`, `class_datetime`, `max_capaci
 (4, 'WOD Crossfit', 1, '2026-06-01 18:00:00', 20),
 (5, 'Yoga Flow', 2, '2026-06-02 08:00:00', 15),
 (6, 'Hiit Cardio', 1, '2026-06-03 19:00:00', 2),
-(7, 'Pilates Avançado', 2, '2026-06-04 10:30:00', 12);
+(7, 'Pilates Avançado', 2, '2026-06-04 10:30:00', 12),
+(8, 'Corrida', 2, '2026-06-03 12:12:00', 111);
 
 -- --------------------------------------------------------
 
@@ -78,16 +79,17 @@ INSERT INTO `classes` (`id`, `name`, `trainer_id`, `class_datetime`, `max_capaci
 CREATE TABLE `trainers` (
   `id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
-  `specialty` varchar(100) NOT NULL
+  `specialty` varchar(100) NOT NULL,
+  `user_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Extraindo dados da tabela `trainers`
 --
 
-INSERT INTO `trainers` (`id`, `name`, `specialty`) VALUES
-(1, 'João Silva', 'Cross Training'),
-(2, 'Marta Costa', 'Yoga & Pilates');
+INSERT INTO `trainers` (`id`, `name`, `specialty`, `user_id`) VALUES
+(1, 'João Silva', 'Cross Training', NULL),
+(2, 'Marta Costa', 'Yoga & Pilates', NULL);
 
 -- --------------------------------------------------------
 
@@ -101,15 +103,19 @@ CREATE TABLE `users` (
   `username` varchar(50) NOT NULL,
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `plan_name` varchar(50) DEFAULT 'Sem Plano',
+  `plan_expires` date DEFAULT NULL,
+  `photo` longtext DEFAULT NULL,
+  `role` enum('user','trainer','admin') DEFAULT 'user'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Extraindo dados da tabela `users`
 --
 
-INSERT INTO `users` (`id`, `name`, `username`, `email`, `password`, `created_at`) VALUES
-(1, 'Pigy', 'pigy', 'pigy@gmail.com', '$2y$10$o6A9F7f4ZBJzJ69hIfrpJO4y9lfD6ylIxGXYBbwcV9fS5zjPd8CQK', '2026-05-28 19:05:59');
+INSERT INTO `users` (`id`, `name`, `username`, `email`, `password`, `created_at`, `plan_name`, `plan_expires`, `photo`, `role`) VALUES
+(1, 'ADM', 'pigy', 'pigy@gmail.com', '$2y$10$o6A9F7f4ZBJzJ69hIfrpJO4y9lfD6ylIxGXYBbwcV9fS5zjPd8CQK', '2026-05-28 19:05:59', 'Elite Plan', '2026-07-01', 'http://localhost/domus_backend/uploads/user_1_1780269822.jpg', 'admin');
 
 --
 -- Índices para tabelas despejadas
@@ -158,7 +164,7 @@ ALTER TABLE `bookings`
 -- AUTO_INCREMENT de tabela `classes`
 --
 ALTER TABLE `classes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT de tabela `trainers`

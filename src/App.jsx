@@ -7,7 +7,8 @@ import Auth from './pages/Auth';
 import Membership from './pages/Membership';
 import Tools from './pages/Tools';
 import Profile from './pages/Profile'; 
-import MyBookings from './pages/MyBookings'; // <-- Importa a página nova
+import MyBookings from './pages/MyBookings'; 
+import AdminPanel from './pages/AdminPanel'; // <-- Importa o painel admin
 import ProtectedRoute from './routes/ProtectedRoute';
 
 function App() {
@@ -23,7 +24,7 @@ function App() {
         <Route path="/login" element={<Auth />} />
         <Route path="/schedule" element={<Schedule />} />
         
-        {/* ROTAS PROTEGIDAS */}
+        {/* ROTAS PROTEGIDAS PARA UTILIZADORES */}
         <Route 
           path="/profile" 
           element={
@@ -33,12 +34,21 @@ function App() {
           } 
         />
         
-        {/* Nova Rota Protegida para a página das tuas aulas */}
         <Route 
           path="/my-bookings" 
           element={
             <ProtectedRoute>
               <MyBookings />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* ROTA EXCLUSIVA PARA ADMINS */}
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminPanel />
             </ProtectedRoute>
           } 
         />

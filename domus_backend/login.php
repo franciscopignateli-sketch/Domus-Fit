@@ -22,7 +22,9 @@ if (isset($data->login_input) && isset($data->password)) {
                 "id" => $user['id'], 
                 "name" => $user['name'], 
                 "username" => $user['username'],
-                "email" => $user['email']
+                "email" => $user['email'],
+                "role" => $user['role'], // ADICIONADO AQUI
+                "photo" => $user['photo'] // ADICIONADO AQUI
             ]
         ]);
     } else {
