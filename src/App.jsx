@@ -8,7 +8,8 @@ import Membership from './pages/Membership';
 import Tools from './pages/Tools';
 import Profile from './pages/Profile'; 
 import MyBookings from './pages/MyBookings'; 
-import AdminPanel from './pages/AdminPanel'; // <-- Importa o painel admin
+import AdminPanel from './pages/AdminPanel';
+import TrainerPanel from './pages/TrainerPanel';
 import ProtectedRoute from './routes/ProtectedRoute';
 
 function App() {
@@ -49,6 +50,15 @@ function App() {
           element={
             <ProtectedRoute requiredRole="admin">
               <AdminPanel />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/trainer" 
+          element={
+            <ProtectedRoute requiredRole="trainer">
+              <TrainerPanel />
             </ProtectedRoute>
           } 
         />

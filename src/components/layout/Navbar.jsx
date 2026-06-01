@@ -48,6 +48,13 @@ function Navbar() {
               Painel Admin
             </Link>
           )}
+
+          {/* SÓ MOSTRA SE FOR TREINADOR */}
+          {isLogged && userRole === 'trainer' && (
+            <Link to="/trainer" className="text-gym-yellow font-bold hover:underline transition-all underline-offset-4 decoration-2">
+              Agenda do Treinador
+            </Link>
+          )}
           
           {isLogged ? (
             <button 

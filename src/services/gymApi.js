@@ -141,3 +141,28 @@ export const fetchTrainers = async () => {
         return { success: false, trainers: [] };
     }
 };
+// Criar uma nova conta de Treinador (Apenas para Admins)
+export const createTrainer = async (trainerData) => {
+    try {
+        const response = await fetch(`${BASE_URL}/create_trainer.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(trainerData)
+        });
+        return await response.json();
+    } catch (error) {
+        console.error("Erro ao criar treinador:", error);
+        return { success: false, message: "Erro de ligação ao servidor." };
+    }
+};
+
+// Vai buscar as aulas específicas de um treinador
+export const fetchTrainerAgenda = async (userId) => {
+    try {
+        const response = await fetch(`${BASE_URL}/get_trainer_agenda.php?user_id=${userId}`);
+        return await response.json();
+    } catch (error) {
+        console.error("Erro ao ir buscar agenda do treinador:", error);
+        return { success: false, classes: [] };
+    }
+};

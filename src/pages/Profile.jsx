@@ -49,7 +49,7 @@ function Profile() {
         name: u.name,
         username: u.username,
         email: u.email,
-        photo: u.photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop",
+        photo: u.photo || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
         plan: u.plan_name && planActive ? u.plan_name : "Sem Plano Ativo",
         daysLeft: daysLeft,
         planActive: planActive,
