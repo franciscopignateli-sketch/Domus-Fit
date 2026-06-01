@@ -3,14 +3,15 @@ import { fetchTrainers } from '../../services/gymApi';
 
 function TrainersSection() {
   const [trainers, setTrainers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true); // Novo estado!
 
   useEffect(() => {
     const getTrainers = async () => {
       const data = await fetchTrainers();
       if (data.success) {
-        // Mostra estritamente apenas os primeiros 3 treinadores para manter o equilíbrio na Home
         setTrainers(data.trainers.slice(0, 3));
       }
+      setIsLoading(false); // O carregamento terminou, mesmo que venha vazio!
     };
     getTrainers();
   }, []);
@@ -27,8 +28,10 @@ function TrainersSection() {
           </p>
         </div>
 
-        {trainers.length === 0 ? (
+        {isLoading ? (
           <p className="text-center text-gray-500">A carregar equipa...</p>
+        ) : trainers.length === 0 ? (
+          <p className="text-center text-gray-500">A nossa equipa está a ser formada. Volta em breve!</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {trainers.map((trainer) => (

@@ -4,15 +4,17 @@ import ScrollToTop from '../components/layout/ScrollToTop';
 
 function About() {
   const [trainers, setTrainers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true); // Novo estado!
 
   useEffect(() => {
-    const loadAllTrainers = async () => {
+    const getTrainers = async () => {
       const data = await fetchTrainers();
       if (data.success) {
-        setTrainers(data.trainers); // Puxa TODOS os treinadores da base de dados
+        setTrainers(data.trainers.slice(0, 3));
       }
+      setIsLoading(false); // O carregamento terminou, mesmo que venha vazio!
     };
-    loadAllTrainers();
+    getTrainers();
   }, []);
 
   return (
@@ -67,9 +69,11 @@ function About() {
               Conhece a <span className="text-gym-yellow">Equipa</span>
             </h2>
 
-            {trainers.length === 0 ? (
-              <p className="text-center text-gray-500">A carregar equipa...</p>
-            ) : (
+            {isLoading ? (
+          <p className="text-center text-gray-500">A carregar equipa...</p>
+        ) : trainers.length === 0 ? (
+          <p className="text-center text-gray-500">A nossa equipa está a ser formada. Volta em breve!</p>
+        ) : (
               // Tailwind v4 lida de forma fantástica com grids flexíveis! Ele cria 3 colunas por defeito e salta de linha dinamicamente se houver 30 treinadores.
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
                 {trainers.map((trainer, index) => (

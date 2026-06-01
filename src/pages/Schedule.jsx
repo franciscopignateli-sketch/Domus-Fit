@@ -5,6 +5,7 @@ import { fetchGymClasses, bookClass, cancelClass } from '../services/gymApi';
 function Schedule() {
   const [classes, setClasses] = useState([]);
   const [loadingClassId, setLoadingClassId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true); // <-- Novo estado adicionado
   const navigate = useNavigate();
   
   const userString = localStorage.getItem('domus_user');
@@ -15,6 +16,7 @@ function Schedule() {
   }, []);
 
   const loadClasses = async () => {
+    setIsLoading(true); // Garante que mostra o "a carregar" sempre que faz fetch
     const data = await fetchGymClasses(user ? user.id : null);
 
     if (data.success) {
@@ -28,7 +30,7 @@ function Schedule() {
         
         return {
           id: cls.id,
-          date: dateString, // <--- Adicionada a data aqui
+          date: dateString,
           time: timeString,
           name: cls.class_name,
           trainer: cls.trainer_name,
@@ -38,6 +40,8 @@ function Schedule() {
       });
       setClasses(formattedClasses);
     }
+    
+    setIsLoading(false); // <-- Termina o loading quer haja aulas ou não!
   };
 
   const toggleBooking = async (cls) => {
@@ -85,8 +89,14 @@ function Schedule() {
         </h1>
 
         <div className="space-y-4">
-          {classes.length === 0 ? (
+          {isLoading ? (
             <p className="text-gray-400 text-center py-10">A carregar aulas...</p>
+          ) : classes.length === 0 ? (
+            <div className="bg-gym-dark p-10 rounded-lg border border-white/5 text-center">
+              <span className="block text-4xl mb-4">🗓️</span>
+              <p className="text-gray-300 text-lg">De momento não existem aulas agendadas.</p>
+              <p className="text-gray-500 mt-2">Volta mais tarde para veres as novidades do nosso horário!</p>
+            </div>
           ) : (
             classes.map((cls) => (
               <div 
@@ -97,7 +107,6 @@ function Schedule() {
               >
                 <div className="flex items-center gap-6 mb-4 md:mb-0 w-full md:w-auto">
                   
-                  {/* AQUI ESTÁ A ATUALIZAÇÃO DO BLOCO DE DATA E HORA */}
                   <div className="text-xl font-bold text-gym-yellow font-mono text-center">
                     <div>{cls.date}</div>
                     <div className="text-2xl">{cls.time}</div>

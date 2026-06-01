@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 01-Jun-2026 às 22:27
+-- Tempo de geração: 01-Jun-2026 às 22:52
 -- Versão do servidor: 10.4.27-MariaDB
 -- versão do PHP: 8.2.0
 
@@ -85,7 +85,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `username`, `email`, `password`, `created_at`, `plan_name`, `plan_expires`, `photo`, `role`) VALUES
-(1, 'Administrador Master', 'admin', 'admin@domusfit.pt', '$2y$10$EixzaYVK1EwLn7rxpWcbyOfHWhu9VTv6JWZ3V9w.J0OvxoA6T096.', '2026-06-01 20:27:07', 'Elite Plan', '2030-01-01', 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', 'admin');
+(1, 'Admin', 'admin', 'admin@gmail.com', '$2y$10$EBMO7rFFsJd7B0gzpJ/cbuVQ.VD5jCUIuv0JyxW1jgxuMouDK1JzG', '2026-06-01 20:49:55', 'Sem Plano', NULL, NULL, 'admin');
 
 --
 -- Índices para tabelas despejadas
