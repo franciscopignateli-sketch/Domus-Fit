@@ -9,8 +9,8 @@ npm install
 
 # 4. Preparar xampp
 Abrir a pasta C:\xampp\htdocs
-Criar uma pasta domus_backend
-Copiar as pastas do git pra la
+Copiar a pasta domus_backend (que veio do git)
+Colar na pasta C:\xampp\htdocs
 
 # 5. Preparar php my admin
 importar base dados domus-fit.sql no php my admin
