@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchUserBookings, fetchUserProfile, updateUserProfile, uploadUserPhoto } from '../services/gymApi';
+import CustomModal from '../components/layout/CustomModal';
 
 function Profile() {
   const navigate = useNavigate();
@@ -8,8 +9,8 @@ function Profile() {
   
   const [user, setUser] = useState(null);
   const [nextClass, setNextClass] = useState(null);
+  const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'success' });
   
-  // Estados para edição inline
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -17,7 +18,7 @@ function Profile() {
   const [stats, setStats] = useState({
     completedThisMonth: 0,
     bookedThisMonth: 0,
-    monthlyTarget: 12 // Meta de 12 aulas/treinos por mês
+    monthlyTarget: 12
   });
 
   useEffect(() => {
@@ -36,12 +37,23 @@ function Profile() {
       
       let daysLeft = 0;
       let planActive = false;
-      if (u.plan_expires) {
-        const expires = new Date(u.plan_expires);
-        const today = new Date();
-        const diffTime = expires - today;
-        daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        planActive = daysLeft > 0;
+      let planText = "";
+
+      if (u.role === 'admin') {
+        planActive = true;
+        planText = "Administrador";
+      } else if (u.role === 'trainer') {
+        planActive = true;
+        planText = "Treinador / Staff";
+      } else {
+        if (u.plan_expires) {
+          const expires = new Date(u.plan_expires);
+          const today = new Date();
+          const diffTime = expires - today;
+          daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          planActive = daysLeft > 0;
+        }
+        planText = u.plan_name && planActive ? u.plan_name : "Sem Plano Ativo";
       }
 
       setUser({
@@ -49,22 +61,20 @@ function Profile() {
         name: u.name,
         username: u.username,
         email: u.email,
+        role: u.role,
         photo: u.photo || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-        plan: u.plan_name && planActive ? u.plan_name : "Sem Plano Ativo",
+        plan: planText,
         daysLeft: daysLeft,
         planActive: planActive,
-        memberNumber: `DOMUS-${String(u.id).padStart(4, '0')}`
+        memberNumber: u.role === 'user' ? `DOMUS-${String(u.id).padStart(4, '0')}` : `STAFF-${String(u.id).padStart(4, '0')}`
       });
 
       setEditName(u.name);
     }
-
+    
     const bookingsData = await fetchUserBookings(userId);
     if (bookingsData.success && bookingsData.bookings.length > 0) {
       const now = new Date();
-      
-      // 1. Definir a Próxima Aula
-      // Filtra as aulas que ainda vão acontecer e apanha a primeira
       const futureBookings = bookingsData.bookings.filter(b => new Date(b.class_datetime) >= now);
       if (futureBookings.length > 0) {
         const upcoming = futureBookings[0];
@@ -76,7 +86,6 @@ function Profile() {
         });
       }
 
-      // 2. Calcular as Estatísticas do Mês Atual
       const currentMonth = now.getMonth();
       const currentYear = now.getFullYear();
       
@@ -95,7 +104,6 @@ function Profile() {
     }
   };
 
-  // Lidar com Upload de Foto clicando na imagem
   const handlePhotoClick = () => {
     if (!isUploading) fileInputRef.current.click();
   };
@@ -113,11 +121,11 @@ function Profile() {
       const localUser = JSON.parse(localStorage.getItem('domus_user'));
       localStorage.setItem('domus_user', JSON.stringify({ ...localUser, photo: result.photo_url }));
     } else {
-      alert("Erro ao enviar foto: " + result.message);
+      // MODAL DE ERRO FOTO
+      setModal({ isOpen: true, title: "Erro na Foto", message: result.message, type: "error" });
     }
   };
 
-  // Guardar apenas o nome inline
   const handleSaveName = async () => {
     if (editName.trim() === '') return;
     
@@ -125,7 +133,7 @@ function Profile() {
       user_id: user.id,
       name: editName,
       photo: user.photo, 
-      password: '' // Mantém a antiga
+      password: '' 
     });
 
     if (result.success) {
@@ -133,8 +141,12 @@ function Profile() {
       setIsEditingName(false);
       const localUser = JSON.parse(localStorage.getItem('domus_user'));
       localStorage.setItem('domus_user', JSON.stringify({ ...localUser, name: editName }));
+      
+      // MODAL DE SUCESSO A GUARDAR O NOME
+      setModal({ isOpen: true, title: "Perfil Atualizado", message: "O teu nome foi alterado com sucesso.", type: "success" });
     } else {
-      alert(result.message);
+      // MODAL DE ERRO NOME
+      setModal({ isOpen: true, title: "Erro ao Guardar", message: result.message, type: "error" });
     }
   };
 
@@ -148,14 +160,12 @@ function Profile() {
         <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6 mb-12 bg-gym-dark p-8 rounded-xl border border-white/5">
           <div className="flex flex-col md:flex-row items-center gap-6">
             
-            {/* FOTO DE PERFIL COM HOVER PARA UPLOAD */}
             <div 
               onClick={handlePhotoClick}
               className="relative w-24 h-24 bg-gray-700 rounded-full overflow-hidden border-2 border-gym-yellow shrink-0 group cursor-pointer"
             >
               <img src={user.photo} alt="User" className={`w-full h-full object-cover transition-opacity duration-300 ${isUploading ? 'opacity-50' : 'group-hover:opacity-40'}`} />
               
-              {/* Ícone de Câmara que aparece no hover */}
               {!isUploading && (
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,19 +175,16 @@ function Profile() {
                 </div>
               )}
               
-              {/* Loading spinner */}
               {isUploading && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-6 h-6 border-2 border-gym-yellow border-t-transparent rounded-full animate-spin"></div>
                 </div>
               )}
 
-              {/* Input de ficheiro invisível */}
               <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
             </div>
 
             <div className="text-center md:text-left">
-              {/* NOME COM EDIÇÃO INLINE */}
               {isEditingName ? (
                 <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
                   <input 
@@ -203,7 +210,6 @@ function Profile() {
               
               <p className="text-gray-400 mt-1">@{user.username} • {user.email}</p>
               
-              {/* Etiqueta do Plano */}
               <div className="mt-3 inline-block px-4 py-1 rounded-full bg-gym-yellow/10 border border-gym-yellow">
                 <span className="text-gym-yellow font-bold uppercase text-sm">
                   {user.plan} {user.planActive && `(Faltam ${user.daysLeft} dias)`}
@@ -233,10 +239,9 @@ function Profile() {
             )}
           </div>
 
-          {/* COLUNA DIREITA: Próxima Aula + Ações + Metas */}
+          {/* COLUNA DIREITA */}
           <div className="md:col-span-2 space-y-6">
             
-            {/* Próximo Treino */}
             <div className="bg-linear-to-r from-gym-dark to-black p-6 rounded-xl border-l-4 border-gym-yellow">
               <h3 className="text-lg font-bold text-gray-400 uppercase mb-3">Próxima Aula</h3>
               <div className="flex justify-between items-end">
@@ -256,42 +261,57 @@ function Profile() {
               </div>
             </div>
 
-            {/* Metas e Progresso (Gamificação) */}
-            <div className="bg-gym-dark p-6 rounded-xl border border-white/10">
-              <h3 className="text-lg font-bold text-white uppercase mb-4 flex items-center gap-2">
-                <span>🔥</span> O Teu Progresso Mensal
-              </h3>
-              
-              <div className="space-y-5">
-                {/* Meta Mensal de Frequência */}
-                <div>
-                  <div className="flex justify-between text-sm text-gray-400 mb-2 font-bold uppercase">
-                    <span>Meta de Treinos Mensal</span>
-                    <span className="text-white">{stats.completedThisMonth} / {stats.monthlyTarget} Dias</span>
-                  </div>
-                  <div className="w-full bg-black/50 rounded-full h-2.5 border border-white/5">
-                    <div 
-                      className="bg-gym-yellow h-2.5 rounded-full transition-all duration-1000" 
-                      style={{ width: `${Math.min((stats.completedThisMonth / stats.monthlyTarget) * 100, 100)}%` }}>
+            {user.role === 'user' ? (
+              <div className="bg-gym-dark p-6 rounded-xl border border-white/10">
+                <h3 className="text-lg font-bold text-white uppercase mb-4 flex items-center gap-2">
+                  <span>🔥</span> O Teu Progresso Mensal
+                </h3>
+                <div className="space-y-5">
+                  <div>
+                    <div className="flex justify-between text-sm text-gray-400 mb-2 font-bold uppercase">
+                      <span>Meta de Treinos Mensal</span>
+                      <span className="text-white">{stats.completedThisMonth} / {stats.monthlyTarget} Dias</span>
+                    </div>
+                    <div className="w-full bg-black/50 rounded-full h-2.5 border border-white/5">
+                      <div className="bg-gym-yellow h-2.5 rounded-full transition-all duration-1000" style={{ width: `${Math.min((stats.completedThisMonth / stats.monthlyTarget) * 100, 100)}%` }}></div>
                     </div>
                   </div>
-                </div>
-
-                {/* Assiduidade nas Aulas Marcadas */}
-                <div>
-                  <div className="flex justify-between text-sm text-gray-400 mb-2 font-bold uppercase">
-                    <span>Aulas Concluídas vs Marcadas</span>
-                    <span className="text-white">{stats.completedThisMonth} / {stats.bookedThisMonth || 1} Aulas</span>
-                  </div>
-                  <div className="w-full bg-black/50 rounded-full h-2.5 border border-white/5">
-                    <div 
-                      className="bg-blue-500 h-2.5 rounded-full transition-all duration-1000" 
-                      style={{ width: `${stats.bookedThisMonth > 0 ? (stats.completedThisMonth / stats.bookedThisMonth) * 100 : 0}%` }}>
+                  <div>
+                    <div className="flex justify-between text-sm text-gray-400 mb-2 font-bold uppercase">
+                      <span>Aulas Concluídas vs Marcadas</span>
+                      <span className="text-white">{stats.completedThisMonth} / {stats.bookedThisMonth || 1} Aulas</span>
+                    </div>
+                    <div className="w-full bg-black/50 rounded-full h-2.5 border border-white/5">
+                      <div className="bg-blue-500 h-2.5 rounded-full transition-all duration-1000" style={{ width: `${stats.bookedThisMonth > 0 ? (stats.completedThisMonth / stats.bookedThisMonth) * 100 : 0}%` }}></div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            ) : user.role === 'admin' ? (
+              <div className="bg-gym-dark p-6 rounded-xl border border-white/10 border-l-4 ">
+                <h3 className="text-lg font-bold text-white uppercase mb-3 flex items-center gap-2">
+                  <span>⚡</span> Modo Administrador Ativo
+                </h3>
+                <p className="text-gray-400 text-sm leading-relaxed mb-4">
+                  Tens credenciais de acesso total e vitalício às instalações. Usa o QR Code ao lado para validação no balcão. Para criar horários ou registar staff, acede ao teu painel.
+                </p>
+                <Link to="/admin" className="inline-block w-full bg-white/10 text-gym-yellow hover:bg-white/20 font-bold text-center py-2.5 rounded uppercase text-xs tracking-wider transition-all">
+                  Abrir Consola de Administração &rarr;
+                </Link>
+              </div>
+            ) : (
+              <div className="bg-gym-dark p-6 rounded-xl border border-white/10 border-l-4 ">
+                <h3 className="text-lg font-bold text-white uppercase mb-3 flex items-center gap-2">
+                  <span>📋</span> Perfil Técnico de Staff
+                </h3>
+                <p className="text-gray-400 text-sm leading-relaxed mb-4">
+                  A tua conta está configurada como Treinador Oficial. O teu passe de entrada nunca expira. Podes verificar quais são as tuas turmas e a lista de chamadas dos teus alunos aqui.
+                </p>
+                <Link to="/trainer" className="inline-block w-full bg-white/10 text-blue-400 hover:bg-white/20 font-bold text-center py-2.5 rounded uppercase text-xs tracking-wider transition-all">
+                  Consultar a Minha Agenda &rarr;
+                </Link>
+              </div>
+            )}
 
             {/* Ações Rápidas */}
             <div className="grid grid-cols-2 gap-4">
@@ -308,6 +328,15 @@ function Profile() {
           </div>
         </div>
       </div>
+      
+      {/* COMPONENTE DO MODAL */}
+      <CustomModal 
+        isOpen={modal.isOpen} 
+        onClose={() => setModal({ ...modal, isOpen: false })} 
+        title={modal.title} 
+        message={modal.message} 
+        type={modal.type} 
+      />
     </div>
   );
 }

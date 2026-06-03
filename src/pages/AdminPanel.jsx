@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createGymClass, fetchGymClasses, fetchTrainers, createTrainer } from '../services/gymApi';
+import CustomModal from '../components/layout/CustomModal';
 
 function AdminPanel() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('classes'); // 'classes' ou 'trainers'
+  const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'success' });
   
   // Estados do formulário de Aulas
   const [className, setClassName] = useState('');
@@ -28,7 +30,12 @@ function AdminPanel() {
   useEffect(() => {
     const localUser = JSON.parse(localStorage.getItem('domus_user'));
     if (!localUser || localUser.role !== 'admin') {
-      alert('Acesso negado! Esta área é exclusiva para administradores.');
+      setModal({
+        isOpen: true,
+        title: "Falha na Reserva",
+        message: "Não conseguimos processar o teu agendamento. Tenta novamente.",
+        type: "error"
+      });
       navigate('/');
       return;
     }
@@ -189,7 +196,7 @@ function AdminPanel() {
                 <table className="w-full border-collapse text-left">
                   <thead>
                     <tr className="border-b border-white/10 text-gray-400 text-sm uppercase font-bold">
-                      <th className="py-3 px-4">Modalidade / Treino</th> {/* CORRIGIDO AQUI */}
+                      <th className="py-3 px-4">Modalidade / Treino</th>
                       <th className="py-3 px-4">Treinador</th>
                       <th className="py-3 px-4">Data / Hora</th>
                       <th className="py-3 px-4 text-center">Capacidade</th>
@@ -281,6 +288,13 @@ function AdminPanel() {
         )}
 
       </div>
+    <CustomModal 
+      isOpen={modal.isOpen} 
+      onClose={() => setModal({ ...modal, isOpen: false })} 
+      title={modal.title} 
+      message={modal.message} 
+      type={modal.type} 
+    />
     </div>
   );
 }

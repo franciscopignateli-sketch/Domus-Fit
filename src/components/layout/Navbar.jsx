@@ -37,6 +37,7 @@ function Navbar() {
           <Link to="/schedule" className="hover:text-gym-yellow transition-all">Agendar</Link>
           <Link to="/membership" className="hover:text-gym-yellow transition-all">Planos</Link>
           <Link to="/tools" className="hover:text-gym-yellow transition-all">Ferramentas</Link>
+          <Link to="/exercises" className="hover:text-gym-yellow transition-all">Exercícios</Link>
           
           {isLogged && (
             <Link to="/profile" className="hover:text-gym-yellow transition-all">Perfil</Link>

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { fetchUserBookings, cancelClass } from '../services/gymApi';
+import CustomModal from '../components/layout/CustomModal';
 
 function MyBookings() {
   const [bookings, setBookings] = useState([]);
   const [loadingId, setLoadingId] = useState(null);
+  const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'success' });
   const user = JSON.parse(localStorage.getItem('domus_user'));
 
   useEffect(() => {
@@ -23,13 +25,15 @@ function MyBookings() {
     setLoadingId(null);
 
     if (data.success) {
-      // Se cancelou, removemos a aula da lista no ecrã
-      setBookings(bookings.filter(b => b.booking_id !== classId)); // Note que o ID precisa bater certo com o que o get_user_bookings devolve
-      // Para ser mais seguro (visto que a API devolve o class_id como algo implícito ou precisamos mudar no get_user_bookings)
-      // Como o nosso cancelClass usa user_id e class_id, vamos recarregar a lista toda que é mais fácil e seguro:
       loadMyBookings();
     } else {
-      alert(data.message);
+      // MODAL DE ERRO EM VEZ DE ALERT
+      setModal({
+        isOpen: true,
+        title: "Erro ao Cancelar",
+        message: data.message,
+        type: "error"
+      });
     }
   };
 
@@ -64,19 +68,28 @@ function MyBookings() {
                     </div>
                   </div>
 
-                <button 
+                  <button 
                     onClick={() => handleCancel(booking.class_id)} 
                     disabled={loadingId === booking.class_id}
                     className="px-6 py-2 rounded font-bold uppercase tracking-wider text-sm transition-all bg-transparent border border-gym-yellow text-gym-yellow hover:bg-red-500 hover:text-white hover:border-red-500 cursor-pointer min-w-30"
-                    >
+                  >
                     {loadingId === booking.class_id ? "Aguarde..." : "Cancelar Reserva"}
-                    </button>
+                  </button>
                 </div>
               );
             })
           )}
         </div>
       </div>
+
+      {/* COMPONENTE DO MODAL */}
+      <CustomModal 
+        isOpen={modal.isOpen} 
+        onClose={() => setModal({ ...modal, isOpen: false })} 
+        title={modal.title} 
+        message={modal.message} 
+        type={modal.type} 
+      />
     </div>
   );
 }

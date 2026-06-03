@@ -1,31 +1,32 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchGymClasses, bookClass, cancelClass } from '../services/gymApi'; 
+import CustomModal from '../components/layout/CustomModal';
 
 function Schedule() {
   const [classes, setClasses] = useState([]);
   const [loadingClassId, setLoadingClassId] = useState(null);
-  const [isLoading, setIsLoading] = useState(true); // <-- Novo estado adicionado
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'success' });
   
   const userString = localStorage.getItem('domus_user');
   const user = userString ? JSON.parse(userString) : null;
+
+  const isClient = !user || user.role === 'user';
 
   useEffect(() => {
     loadClasses();
   }, []);
 
   const loadClasses = async () => {
-    setIsLoading(true); // Garante que mostra o "a carregar" sempre que faz fetch
+    setIsLoading(true); 
     const data = await fetchGymClasses(user ? user.id : null);
 
     if (data.success) {
       const formattedClasses = data.classes.map(cls => {
         const dateObj = new Date(cls.class_datetime);
-        
-        // Formata a data (Ex: "01 jun")
         const dateString = dateObj.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' });
-        // Formata a hora (Ex: "18:00")
         const timeString = dateObj.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
         
         return {
@@ -40,14 +41,20 @@ function Schedule() {
       });
       setClasses(formattedClasses);
     }
-    
-    setIsLoading(false); // <-- Termina o loading quer haja aulas ou não!
+    setIsLoading(false); 
   };
 
   const toggleBooking = async (cls) => {
+    if (!isClient) return;
+
     if (!user) {
-      alert("Precisas de fazer login para reservar aulas!");
-      navigate('/login');
+      setModal({
+        isOpen: true,
+        title: "Sessão Necessária",
+        message: "Precisas de fazer login para reservar aulas!",
+        type: "error"
+      });
+      setTimeout(() => navigate('/login'), 2000);
       return;
     }
 
@@ -65,16 +72,19 @@ function Schedule() {
     if (data.success) {
       setClasses(classes.map(c => {
         if (c.id === cls.id) {
-          return { 
-            ...c, 
-            booked: !c.booked,
-            spots: c.booked ? c.spots + 1 : c.spots - 1 
-          };
+          return { ...c, booked: !c.booked, spots: c.booked ? c.spots + 1 : c.spots - 1 };
         }
         return c;
       }));
     } else {
-      alert(data.message); 
+      // Pop-up de ERRO em vez de Alert
+      setModal({
+        isOpen: true,
+        title: "Aviso",
+        message: data.message,
+        type: "error"
+      });
+      
       if (data.message === "Já tens o teu lugar marcado nesta aula!") {
           setClasses(classes.map(c => c.id === cls.id ? { ...c, booked: true } : c));
       }
@@ -99,19 +109,12 @@ function Schedule() {
             </div>
           ) : (
             classes.map((cls) => (
-              <div 
-                key={cls.id} 
-                className={`flex flex-col md:flex-row items-center justify-between p-6 rounded-lg border transition-all ${
-                  cls.booked ? "bg-gym-yellow/10 border-gym-yellow" : "bg-gym-dark border-white/5 hover:border-white/20"
-                }`}
-              >
+              <div key={cls.id} className={`flex flex-col md:flex-row items-center justify-between p-6 rounded-lg border transition-all ${cls.booked ? "bg-gym-yellow/10 border-gym-yellow" : "bg-gym-dark border-white/5 hover:border-white/20"}`}>
                 <div className="flex items-center gap-6 mb-4 md:mb-0 w-full md:w-auto">
-                  
                   <div className="text-xl font-bold text-gym-yellow font-mono text-center">
                     <div>{cls.date}</div>
                     <div className="text-2xl">{cls.time}</div>
                   </div>
-
                   <div>
                     <h3 className="text-xl font-bold text-white uppercase">{cls.name}</h3>
                     <p className="text-gray-400 text-sm">Treinador: {cls.trainer}</p>
@@ -128,18 +131,19 @@ function Schedule() {
 
                   <button 
                     onClick={() => toggleBooking(cls)}
-                    disabled={(cls.spots <= 0 && !cls.booked) || loadingClassId === cls.id}
+                    disabled={(cls.spots <= 0 && !cls.booked) || loadingClassId === cls.id || !isClient}
                     className={`px-6 py-2 rounded font-bold uppercase tracking-wider text-sm transition-all cursor-pointer min-w-30 ${
-                      cls.booked
-                        ? "bg-transparent border border-gym-yellow text-gym-yellow hover:bg-red-500 hover:text-white hover:border-red-500"
-                        : cls.spots <= 0
-                          ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-                          : "bg-gym-yellow text-gym-black hover:bg-white hover:text-black"
+                      !isClient ? "bg-gray-800 text-gray-500 border border-white/5 cursor-not-allowed" 
+                      : cls.booked ? "bg-transparent border border-gym-yellow text-gym-yellow hover:bg-red-500 hover:text-white hover:border-red-500"
+                      : cls.spots <= 0 ? "bg-gray-800 text-gray-500 cursor-not-allowed"
+                      : "bg-gym-yellow text-gym-black hover:bg-white hover:text-black"
                     } ${loadingClassId === cls.id ? "opacity-50 cursor-wait" : ""}`}
                   >
                     {loadingClassId === cls.id 
                         ? "Aguarde..." 
-                        : cls.booked ? "Cancelar" : cls.spots <= 0 ? "Cheio" : "Reservar"}
+                        : !isClient 
+                          ? "Staff" 
+                          : cls.booked ? "Cancelar" : cls.spots <= 0 ? "Cheio" : "Reservar"}
                   </button>
                 </div>
               </div>
@@ -147,6 +151,13 @@ function Schedule() {
           )}
         </div>
       </div>
+      <CustomModal 
+        isOpen={modal.isOpen} 
+        onClose={() => setModal({ ...modal, isOpen: false })} 
+        title={modal.title} 
+        message={modal.message} 
+        type={modal.type} 
+      />
     </div>
   );
 }

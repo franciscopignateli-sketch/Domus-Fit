@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import CustomModal from '../components/layout/CustomModal';
 
 function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,12 +11,13 @@ function Auth() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   
-  // Estado para o Login (pode ser email OU username)
+  // Estado para o Login
   const [loginInput, setLoginInput] = useState('');
   
   // Estados comuns
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState(''); 
+  const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'success' });
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -24,8 +26,6 @@ function Auth() {
     const endpoint = isLogin ? 'login.php' : 'register.php';
     const url = `http://localhost/domus_backend/${endpoint}`;
 
-    // Prepara os dados para enviar dependendo se é Login ou Registo
-    // NOTA: O login_input tem de corresponder exatamente ao que o PHP está à espera
     const payload = isLogin 
       ? { login_input: loginInput, password } 
       : { name, username, email, password };
@@ -33,9 +33,7 @@ function Auth() {
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
@@ -43,22 +41,25 @@ function Auth() {
 
       if (data.success) {
         if (!isLogin) {
-          // Se registou com sucesso, limpa os campos e muda para login
-          alert("Conta criada com sucesso! Podes fazer login agora.");
+          // MODAL DE SUCESSO EM VEZ DE ALERT
+          setModal({
+            isOpen: true,
+            title: "Bem-vindo!",
+            message: "Conta criada com sucesso! Podes fazer login agora.",
+            type: "success"
+          });
           setIsLogin(true);
           setPassword('');
-          setLoginInput(username); // Preenche logo o input de login para facilitar a vida ao user
+          setLoginInput(username); 
         } else {
-          // Se fez login com sucesso, guarda a sessão e vai para o perfil
           localStorage.setItem('domus_user', JSON.stringify(data.user));
           navigate('/profile');
         }
       } else {
-        // Mostra o erro vindo do PHP (ex: "Username já existe")
         setErrorMsg(data.message);
       }
     } catch (error) {
-      console.error("Erro na comunicação com o servidor:", error);
+      console.error("Erro:", error);
       setErrorMsg("Erro ao ligar ao servidor. Verifica se o XAMPP está ligado.");
     }
   };
@@ -82,74 +83,31 @@ function Auth() {
 
         <form className="space-y-6" onSubmit={handleAuth}>
           
-          {/* CAMPOS APENAS PARA REGISTO */}
           {!isLogin ? (
             <>
               <div>
                 <label className="block text-gray-400 text-sm mb-2">Nome Completo</label>
-                <input 
-                  type="text" 
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" 
-                  placeholder="O teu nome" 
-                  required 
-                />
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" placeholder="O teu nome" required />
               </div>
-
               <div>
                 <label className="block text-gray-400 text-sm mb-2">Username</label>
-                <input 
-                  type="text" 
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value.toLowerCase())} // Força minúsculas
-                  className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" 
-                  placeholder="ex: joao_silva" 
-                  minLength={3}
-                  maxLength={20}
-                  required 
-                />
+                <input type="text" value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())} className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" placeholder="ex: joao_silva" minLength={3} maxLength={20} required />
               </div>
-
               <div>
                 <label className="block text-gray-400 text-sm mb-2">Email</label>
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" 
-                  placeholder="email@exemplo.com" 
-                  required 
-                />
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" placeholder="email@exemplo.com" required />
               </div>
             </>
           ) : (
-            /* CAMPO APENAS PARA LOGIN */
             <div>
               <label className="block text-gray-400 text-sm mb-2">Email ou Username</label>
-              <input 
-                type="text" 
-                value={loginInput}
-                onChange={(e) => setLoginInput(e.target.value)}
-                className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" 
-                placeholder="O teu email ou username" 
-                required 
-              />
+              <input type="text" value={loginInput} onChange={(e) => setLoginInput(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" placeholder="O teu email ou username" required />
             </div>
           )}
 
-          {/* PASSWORD (Comum aos dois) */}
           <div>
             <label className="block text-gray-400 text-sm mb-2">Password</label>
-            <input 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" 
-              placeholder="******" 
-              minLength={6}
-              required 
-            />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none transition-colors" placeholder="******" minLength={6} required />
             {!isLogin && <p className="text-xs text-gray-500 mt-1">Mínimo de 6 caracteres.</p>}
           </div>
 
@@ -165,7 +123,7 @@ function Auth() {
             onClick={() => {
                 setIsLogin(!isLogin);
                 setErrorMsg('');
-                setPassword(''); // Limpar a pass por segurança ao trocar de aba
+                setPassword(''); 
             }}
             className="ml-2 text-gym-yellow font-bold hover:underline cursor-pointer"
           >
@@ -173,6 +131,15 @@ function Auth() {
           </button>
         </div>
       </div>
+
+      {/* COMPONENTE DO MODAL */}
+      <CustomModal 
+        isOpen={modal.isOpen} 
+        onClose={() => setModal({ ...modal, isOpen: false })} 
+        title={modal.title} 
+        message={modal.message} 
+        type={modal.type} 
+      />
     </div>
   );
 }

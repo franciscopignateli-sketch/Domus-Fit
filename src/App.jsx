@@ -10,6 +10,7 @@ import Profile from './pages/Profile';
 import MyBookings from './pages/MyBookings'; 
 import AdminPanel from './pages/AdminPanel';
 import TrainerPanel from './pages/TrainerPanel';
+import Exercises from './pages/Exercises';
 import ProtectedRoute from './routes/ProtectedRoute';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
         <Route path="/tools" element={<Tools />} />
         <Route path="/login" element={<Auth />} />
         <Route path="/schedule" element={<Schedule />} />
+        <Route path="/exercises" element={<Exercises />} />
         
         {/* ROTAS PROTEGIDAS PARA UTILIZADORES */}
         <Route 
