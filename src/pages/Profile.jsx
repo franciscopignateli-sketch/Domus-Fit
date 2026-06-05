@@ -3,6 +3,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { fetchUserBookings, fetchUserProfile, updateUserProfile, uploadUserPhoto } from '../services/gymApi';
 import CustomModal from '../components/layout/CustomModal';
 
+const fitnessTips = [
+  "Mantém-te hidratado! Bebe pelo menos 2 litros de água por dia.",
+  "O descanso é tão importante quanto o treino. Dorme bem!",
+  "A consistência é a chave para alcancares os teus objetivos.",
+  "Não te esqueças de alongar após o treino para evitar lesões.",
+  "A nutrição é o combustível do teu corpo. Escolhe bem o que comes!",
+  "Cada treino conta, por mais curto que seja.",
+  "Foca-te na execução correta antes de aumentares a carga.",
+  "Quem desiste não alcança. Continua a dar o teu melhor!"
+];
+
 function Profile() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -14,12 +25,8 @@ function Profile() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
-
-  const [stats, setStats] = useState({
-    completedThisMonth: 0,
-    bookedThisMonth: 0,
-    monthlyTarget: 12
-  });
+  
+  const [randomTip, setRandomTip] = useState('');
 
   useEffect(() => {
     const localUser = JSON.parse(localStorage.getItem('domus_user'));
@@ -27,6 +34,10 @@ function Profile() {
       navigate('/login');
       return;
     }
+    
+    // Escolhe uma dica aleatória ao carregar o componente
+    setRandomTip(fitnessTips[Math.floor(Math.random() * fitnessTips.length)]);
+    
     loadFullProfile(localUser.id);
   }, [navigate]);
 
@@ -85,22 +96,6 @@ function Profile() {
           date: `${dateObj.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' })}, às ${dateObj.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}`
         });
       }
-
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-      
-      const thisMonthBookings = bookingsData.bookings.filter(b => {
-        const classDate = new Date(b.class_datetime);
-        return classDate.getMonth() === currentMonth && classDate.getFullYear() === currentYear;
-      });
-
-      const completed = thisMonthBookings.filter(b => new Date(b.class_datetime) < now).length;
-      
-      setStats({
-        completedThisMonth: completed,
-        bookedThisMonth: thisMonthBookings.length,
-        monthlyTarget: 12
-      });
     }
   };
 
@@ -121,7 +116,6 @@ function Profile() {
       const localUser = JSON.parse(localStorage.getItem('domus_user'));
       localStorage.setItem('domus_user', JSON.stringify({ ...localUser, photo: result.photo_url }));
     } else {
-      // MODAL DE ERRO FOTO
       setModal({ isOpen: true, title: "Erro na Foto", message: result.message, type: "error" });
     }
   };
@@ -142,10 +136,8 @@ function Profile() {
       const localUser = JSON.parse(localStorage.getItem('domus_user'));
       localStorage.setItem('domus_user', JSON.stringify({ ...localUser, name: editName }));
       
-      // MODAL DE SUCESSO A GUARDAR O NOME
       setModal({ isOpen: true, title: "Perfil Atualizado", message: "O teu nome foi alterado com sucesso.", type: "success" });
     } else {
-      // MODAL DE ERRO NOME
       setModal({ isOpen: true, title: "Erro ao Guardar", message: result.message, type: "error" });
     }
   };
@@ -264,27 +256,12 @@ function Profile() {
             {user.role === 'user' ? (
               <div className="bg-gym-dark p-6 rounded-xl border border-white/10">
                 <h3 className="text-lg font-bold text-white uppercase mb-4 flex items-center gap-2">
-                  <span>🔥</span> O Teu Progresso Mensal
+                  <span>💡</span> Dica do Dia
                 </h3>
-                <div className="space-y-5">
-                  <div>
-                    <div className="flex justify-between text-sm text-gray-400 mb-2 font-bold uppercase">
-                      <span>Meta de Treinos Mensal</span>
-                      <span className="text-white">{stats.completedThisMonth} / {stats.monthlyTarget} Dias</span>
-                    </div>
-                    <div className="w-full bg-black/50 rounded-full h-2.5 border border-white/5">
-                      <div className="bg-gym-yellow h-2.5 rounded-full transition-all duration-1000" style={{ width: `${Math.min((stats.completedThisMonth / stats.monthlyTarget) * 100, 100)}%` }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm text-gray-400 mb-2 font-bold uppercase">
-                      <span>Aulas Concluídas vs Marcadas</span>
-                      <span className="text-white">{stats.completedThisMonth} / {stats.bookedThisMonth || 1} Aulas</span>
-                    </div>
-                    <div className="w-full bg-black/50 rounded-full h-2.5 border border-white/5">
-                      <div className="bg-blue-500 h-2.5 rounded-full transition-all duration-1000" style={{ width: `${stats.bookedThisMonth > 0 ? (stats.completedThisMonth / stats.bookedThisMonth) * 100 : 0}%` }}></div>
-                    </div>
-                  </div>
+                <div className="bg-black/40 p-6 rounded-lg border-l-4 border-gym-yellow">
+                  <p className="text-gray-300 italic text-lg text-center">
+                    "{randomTip}"
+                  </p>
                 </div>
               </div>
             ) : user.role === 'admin' ? (

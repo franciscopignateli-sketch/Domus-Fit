@@ -10,9 +10,12 @@ function Schedule() {
   const navigate = useNavigate();
   const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'success' });
   
+  // ESTADOS DOS FILTROS
+  const [filterModality, setFilterModality] = useState('');
+  const [filterTrainer, setFilterTrainer] = useState('');
+  
   const userString = localStorage.getItem('domus_user');
   const user = userString ? JSON.parse(userString) : null;
-
   const isClient = !user || user.role === 'user';
 
   useEffect(() => {
@@ -48,48 +51,41 @@ function Schedule() {
     if (!isClient) return;
 
     if (!user) {
-      setModal({
-        isOpen: true,
-        title: "Sessão Necessária",
-        message: "Precisas de fazer login para reservar aulas!",
-        type: "error"
-      });
+      setModal({ isOpen: true, title: "Sessão Necessária", message: "Precisas de fazer login para reservar aulas!", type: "error" });
       setTimeout(() => navigate('/login'), 2000);
       return;
     }
 
     setLoadingClassId(cls.id);
-
     let data;
     if (cls.booked) {
         data = await cancelClass(user.id, cls.id);
     } else {
         data = await bookClass(user.id, cls.id);
     }
-
     setLoadingClassId(null);
 
     if (data.success) {
       setClasses(classes.map(c => {
-        if (c.id === cls.id) {
-          return { ...c, booked: !c.booked, spots: c.booked ? c.spots + 1 : c.spots - 1 };
-        }
+        if (c.id === cls.id) return { ...c, booked: !c.booked, spots: c.booked ? c.spots + 1 : c.spots - 1 };
         return c;
       }));
     } else {
-      // Pop-up de ERRO em vez de Alert
-      setModal({
-        isOpen: true,
-        title: "Aviso",
-        message: data.message,
-        type: "error"
-      });
-      
+      setModal({ isOpen: true, title: "Aviso", message: data.message, type: "error" });
       if (data.message === "Já tens o teu lugar marcado nesta aula!") {
           setClasses(classes.map(c => c.id === cls.id ? { ...c, booked: true } : c));
       }
     }
   };
+
+  // LÓGICA DOS FILTROS (Extrai categorias únicas e filtra a lista)
+  const uniqueModalities = [...new Set(classes.map(c => c.name))];
+  const uniqueTrainers = [...new Set(classes.map(c => c.trainer))];
+
+  const filteredClasses = classes.filter(c => {
+    return (filterModality === '' || c.name === filterModality) &&
+           (filterTrainer === '' || c.trainer === filterTrainer);
+  });
 
   return (
     <div className="min-h-screen bg-gym-black pt-24 pb-12 px-6">
@@ -98,17 +94,42 @@ function Schedule() {
           Agenda de <span className="text-gym-yellow">Aulas</span>
         </h1>
 
+        {/* PAINEL DE FILTROS */}
+        {!isLoading && classes.length > 0 && (
+          <div className="flex flex-col md:flex-row gap-4 mb-8 bg-gym-dark p-4 rounded-xl border border-white/5 shadow-lg">
+            <select 
+              value={filterModality} 
+              onChange={(e) => setFilterModality(e.target.value)}
+              className="flex-1 bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none cursor-pointer"
+            >
+              <option value="">Todas as Modalidades</option>
+              {uniqueModalities.map((mod, i) => <option key={i} value={mod}>{mod}</option>)}
+            </select>
+
+            <select 
+              value={filterTrainer} 
+              onChange={(e) => setFilterTrainer(e.target.value)}
+              className="flex-1 bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none cursor-pointer"
+            >
+              <option value="">Todos os Treinadores</option>
+              {uniqueTrainers.map((tr, i) => <option key={i} value={tr}>{tr}</option>)}
+            </select>
+          </div>
+        )}
+
         <div className="space-y-4">
           {isLoading ? (
             <p className="text-gray-400 text-center py-10">A carregar aulas...</p>
-          ) : classes.length === 0 ? (
+          ) : filteredClasses.length === 0 ? (
             <div className="bg-gym-dark p-10 rounded-lg border border-white/5 text-center">
               <span className="block text-4xl mb-4">🗓️</span>
-              <p className="text-gray-300 text-lg">De momento não existem aulas agendadas.</p>
-              <p className="text-gray-500 mt-2">Volta mais tarde para veres as novidades do nosso horário!</p>
+              <p className="text-gray-300 text-lg">De momento não existem aulas para este filtro.</p>
+              <button onClick={() => {setFilterModality(''); setFilterTrainer('');}} className="text-gym-yellow mt-4 text-sm font-bold uppercase hover:underline">
+                Limpar Filtros
+              </button>
             </div>
           ) : (
-            classes.map((cls) => (
+            filteredClasses.map((cls) => (
               <div key={cls.id} className={`flex flex-col md:flex-row items-center justify-between p-6 rounded-lg border transition-all ${cls.booked ? "bg-gym-yellow/10 border-gym-yellow" : "bg-gym-dark border-white/5 hover:border-white/20"}`}>
                 <div className="flex items-center gap-6 mb-4 md:mb-0 w-full md:w-auto">
                   <div className="text-xl font-bold text-gym-yellow font-mono text-center">
@@ -151,13 +172,7 @@ function Schedule() {
           )}
         </div>
       </div>
-      <CustomModal 
-        isOpen={modal.isOpen} 
-        onClose={() => setModal({ ...modal, isOpen: false })} 
-        title={modal.title} 
-        message={modal.message} 
-        type={modal.type} 
-      />
+      <CustomModal isOpen={modal.isOpen} onClose={() => setModal({ ...modal, isOpen: false })} title={modal.title} message={modal.message} type={modal.type} />
     </div>
   );
 }

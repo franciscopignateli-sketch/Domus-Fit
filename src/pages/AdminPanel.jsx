@@ -5,38 +5,38 @@ import CustomModal from '../components/layout/CustomModal';
 
 function AdminPanel() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('classes'); // 'classes' ou 'trainers'
+  const [activeTab, setActiveTab] = useState('classes');
   const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'success' });
   
-  // Estados do formulário de Aulas
   const [className, setClassName] = useState('');
   const [trainerId, setTrainerId] = useState('');
   const [classDatetime, setClassDatetime] = useState('');
   const [maxCapacity, setMaxCapacity] = useState('20');
   
-  // Estados do formulário de Treinadores
   const [tName, setTName] = useState('');
   const [tUsername, setTUsername] = useState('');
   const [tEmail, setTEmail] = useState('');
   const [tPassword, setTPassword] = useState('');
   const [tSpecialty, setTSpecialty] = useState('');
   
-  // Estados de dados globais
   const [trainers, setTrainers] = useState([]);
   const [classes, setClasses] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
+  // CALCULAR DATA MÍNIMA PERMITIDA (Hoje)
+  const getMinDateTime = () => {
+    const now = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000; 
+    return new Date(now - tzOffset).toISOString().slice(0, 16);
+  };
+  const minDateTime = getMinDateTime();
+
   useEffect(() => {
     const localUser = JSON.parse(localStorage.getItem('domus_user'));
     if (!localUser || localUser.role !== 'admin') {
-      setModal({
-        isOpen: true,
-        title: "Falha na Reserva",
-        message: "Não conseguimos processar o teu agendamento. Tenta novamente.",
-        type: "error"
-      });
-      navigate('/');
+      setModal({ isOpen: true, title: "Acesso Negado", message: "Apenas administradores podem aceder a este painel.", type: "error" });
+      setTimeout(() => navigate('/'), 2000);
       return;
     }
     loadInitialData();
@@ -48,18 +48,20 @@ function AdminPanel() {
       setTrainers(trainersData.trainers);
       if (trainersData.trainers.length > 0) setTrainerId(trainersData.trainers[0].id);
     }
-
     const classesData = await fetchGymClasses();
-    if (classesData.success) {
-      setClasses(classesData.classes);
-    }
+    if (classesData.success) setClasses(classesData.classes);
   };
 
-  // Submissão de Nova Aula
   const handleCreateClass = async (e) => {
     e.preventDefault();
     if (!className || !trainerId || !classDatetime || !maxCapacity) {
       setMessage({ type: 'error', text: 'Preenche todos os campos obrigatórios!' });
+      return;
+    }
+    
+    // Verificação dupla no lado do cliente
+    if (classDatetime < minDateTime) {
+      setMessage({ type: 'error', text: 'Não podes criar aulas com datas no passado!' });
       return;
     }
 
@@ -86,7 +88,6 @@ function AdminPanel() {
     }
   };
 
-  // Submissão de Novo Treinador
   const handleCreateTrainer = async (e) => {
     e.preventDefault();
     if (!tName || !tUsername || !tEmail || !tPassword || !tSpecialty) {
@@ -98,24 +99,14 @@ function AdminPanel() {
     setMessage({ type: '', text: '' });
 
     const result = await createTrainer({
-      name: tName,
-      username: tUsername,
-      email: tEmail,
-      password: tPassword,
-      specialty: tSpecialty
+      name: tName, username: tUsername, email: tEmail, password: tPassword, specialty: tSpecialty
     });
 
     setIsLoading(false);
 
     if (result.success) {
-      setMessage({ type: 'success', text: 'Sucesso! Novo treinador adicionado ao ginásio.' });
-      // Limpar formulário de treinadores
-      setTName('');
-      setTUsername('');
-      setTEmail('');
-      setTPassword('');
-      setTSpecialty('');
-      // Atualizar a lista e o select
+      setMessage({ type: 'success', text: 'Sucesso! Novo treinador adicionado.' });
+      setTName(''); setTUsername(''); setTEmail(''); setTPassword(''); setTSpecialty('');
       loadInitialData();
     } else {
       setMessage({ type: 'error', text: result.message });
@@ -130,18 +121,11 @@ function AdminPanel() {
         </h1>
         <p className="text-gray-400 mb-8">Gestão global do ginásio: horários, modalidades e equipa técnica.</p>
 
-        {/* Abas de Navegação Interna do Painel */}
-        <div className="flex bg-gym-dark p-1 rounded-lg mb-8 border border-white/10 max-w-md">
-          <button 
-            onClick={() => { setActiveTab('classes'); setMessage({type:'', text:''}); }}
-            className={`flex-1 py-2.5 rounded font-bold uppercase text-xs tracking-wider transition-all cursor-pointer ${activeTab === 'classes' ? 'bg-white/10 text-gym-yellow shadow-lg' : 'text-gray-400 hover:text-white'}`}
-          >
+        <div className="flex flex-col md:flex-row bg-gym-dark p-1 rounded-lg mb-8 border border-white/10 max-w-md gap-1">
+          <button onClick={() => { setActiveTab('classes'); setMessage({type:'', text:''}); }} className={`flex-1 py-2.5 rounded font-bold uppercase text-xs tracking-wider transition-all cursor-pointer ${activeTab === 'classes' ? 'bg-white/10 text-gym-yellow shadow-lg' : 'text-gray-400 hover:text-white'}`}>
             🗓️ Aulas e Horários
           </button>
-          <button 
-            onClick={() => { setActiveTab('trainers'); setMessage({type:'', text:''}); }}
-            className={`flex-1 py-2.5 rounded font-bold uppercase text-xs tracking-wider transition-all cursor-pointer ${activeTab === 'trainers' ? 'bg-white/10 text-gym-yellow shadow-lg' : 'text-gray-400 hover:text-white'}`}
-          >
+          <button onClick={() => { setActiveTab('trainers'); setMessage({type:'', text:''}); }} className={`flex-1 py-2.5 rounded font-bold uppercase text-xs tracking-wider transition-all cursor-pointer ${activeTab === 'trainers' ? 'bg-white/10 text-gym-yellow shadow-lg' : 'text-gray-400 hover:text-white'}`}>
             👥 Contratar Treinador
           </button>
         </div>
@@ -152,13 +136,10 @@ function AdminPanel() {
           </div>
         )}
 
-        {/* ABA 1: GESTÃO DE AULAS */}
         {activeTab === 'classes' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="bg-gym-dark p-6 rounded-xl border border-white/10 shadow-2xl h-fit">
-              <h2 className="text-xl font-bold text-white uppercase mb-6 flex items-center gap-2">
-                <span>➕</span> Criar Nova Aula
-              </h2>
+              <h2 className="text-xl font-bold text-white uppercase mb-6 flex items-center gap-2"><span>➕</span> Criar Nova Aula</h2>
               <form onSubmit={handleCreateClass} className="space-y-5">
                 <div>
                   <label className="block text-gray-400 text-sm mb-2 font-semibold">Nome da Aula</label>
@@ -167,15 +148,14 @@ function AdminPanel() {
                 <div>
                   <label className="block text-gray-400 text-sm mb-2 font-semibold">Treinador Responsável</label>
                   <select value={trainerId} onChange={(e) => setTrainerId(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none">
-                    {trainers.map(t => (
-                      <option key={t.id} value={t.id}>{t.name} ({t.specialty})</option>
-                    ))}
+                    {trainers.map(t => <option key={t.id} value={t.id}>{t.name} ({t.specialty})</option>)}
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-400 text-sm mb-2 font-semibold">Data e Hora</label>
-                    <input type="datetime-local" value={classDatetime} onChange={(e) => setClassDatetime(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none" />
+                    {/* BLOQUEIO DE DATAS PASSADAS ADICIONADO AQUI */}
+                    <input type="datetime-local" min={minDateTime} value={classDatetime} onChange={(e) => setClassDatetime(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none" />
                   </div>
                   <div>
                     <label className="block text-gray-400 text-sm mb-2 font-semibold">Vagas Máximas</label>
@@ -189,16 +169,14 @@ function AdminPanel() {
             </div>
 
             <div className="lg:col-span-2 bg-gym-dark p-6 rounded-xl border border-white/10 shadow-2xl">
-              <h2 className="text-xl font-bold text-white uppercase mb-6 flex items-center gap-2">
-                <span>📅</span> Horário de Aulas Publicadas
-              </h2>
+              <h2 className="text-xl font-bold text-white uppercase mb-6 flex items-center gap-2"><span>📅</span> Horário de Aulas Publicadas</h2>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-left">
                   <thead>
                     <tr className="border-b border-white/10 text-gray-400 text-sm uppercase font-bold">
-                      <th className="py-3 px-4">Modalidade / Treino</th>
+                      <th className="py-3 px-4 whitespace-nowrap">Modalidade</th>
                       <th className="py-3 px-4">Treinador</th>
-                      <th className="py-3 px-4">Data / Hora</th>
+                      <th className="py-3 px-4 whitespace-nowrap">Data / Hora</th>
                       <th className="py-3 px-4 text-center">Capacidade</th>
                     </tr>
                   </thead>
@@ -210,9 +188,9 @@ function AdminPanel() {
                         const dateObj = new Date(c.class_datetime);
                         return (
                           <tr key={c.id} className="hover:bg-white/5 transition-colors text-white text-sm">
-                            <td className="py-4 px-4 font-bold text-gym-yellow">{c.class_name}</td>
+                            <td className="py-4 px-4 font-bold text-gym-yellow whitespace-nowrap">{c.class_name}</td>
                             <td className="py-4 px-4 text-gray-300">{c.trainer_name}</td>
-                            <td className="py-4 px-4 text-gray-400">{dateObj.toLocaleDateString('pt-PT')} às {dateObj.toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit'})}</td>
+                            <td className="py-4 px-4 text-gray-400 whitespace-nowrap">{dateObj.toLocaleDateString('pt-PT')} às {dateObj.toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit'})}</td>
                             <td className="py-4 px-4 text-center font-mono text-gray-300">{c.max_capacity}</td>
                           </tr>
                         );
@@ -225,13 +203,10 @@ function AdminPanel() {
           </div>
         )}
 
-        {/* ABA 2: REGISTAR NOVO TREINADOR */}
         {activeTab === 'trainers' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="bg-gym-dark p-6 rounded-xl border border-white/10 shadow-2xl h-fit">
-              <h2 className="text-xl font-bold text-white uppercase mb-6 flex items-center gap-2">
-                <span>👤</span> Adicionar Treinador
-              </h2>
+              <h2 className="text-xl font-bold text-white uppercase mb-6 flex items-center gap-2"><span>👤</span> Adicionar Treinador</h2>
               <form onSubmit={handleCreateTrainer} className="space-y-4">
                 <div>
                   <label className="block text-gray-400 text-sm mb-1.5 font-semibold">Nome Completo</label>
@@ -260,22 +235,20 @@ function AdminPanel() {
             </div>
 
             <div className="lg:col-span-2 bg-gym-dark p-6 rounded-xl border border-white/10 shadow-2xl">
-              <h2 className="text-xl font-bold text-white uppercase mb-6 flex items-center gap-2">
-                <span>📋</span> Equipa Técnica Atual
-              </h2>
+              <h2 className="text-xl font-bold text-white uppercase mb-6 flex items-center gap-2"><span>📋</span> Equipa Técnica Atual</h2>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-left">
                   <thead>
                     <tr className="border-b border-white/10 text-gray-400 text-sm uppercase font-bold">
-                      <th className="py-3 px-4">Nome</th>
+                      <th className="py-3 px-4 whitespace-nowrap">Nome</th>
                       <th className="py-3 px-4">Especialidade Principal</th>
-                      <th className="py-3 px-4 text-center">ID Interno</th>
+                      <th className="py-3 px-4 text-center whitespace-nowrap">ID Interno</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {trainers.map((t) => (
                       <tr key={t.id} className="hover:bg-white/5 transition-colors text-white text-sm">
-                        <td className="py-4 px-4 font-bold text-gym-yellow">{t.name}</td>
+                        <td className="py-4 px-4 font-bold text-gym-yellow whitespace-nowrap">{t.name}</td>
                         <td className="py-4 px-4 text-gray-300">{t.specialty}</td>
                         <td className="py-4 px-4 text-center font-mono text-gray-400">#00{t.id}</td>
                       </tr>
@@ -288,13 +261,7 @@ function AdminPanel() {
         )}
 
       </div>
-    <CustomModal 
-      isOpen={modal.isOpen} 
-      onClose={() => setModal({ ...modal, isOpen: false })} 
-      title={modal.title} 
-      message={modal.message} 
-      type={modal.type} 
-    />
+      <CustomModal isOpen={modal.isOpen} onClose={() => setModal({ ...modal, isOpen: false })} title={modal.title} message={modal.message} type={modal.type} />
     </div>
   );
 }
