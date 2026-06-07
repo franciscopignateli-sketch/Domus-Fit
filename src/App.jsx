@@ -27,7 +27,6 @@ function App() {
         <Route path="/schedule" element={<Schedule />} />
         <Route path="/exercises" element={<Exercises />} />
         
-        {/* ROTAS PROTEGIDAS PARA UTILIZADORES */}
         <Route 
           path="/profile" 
           element={
@@ -46,7 +45,6 @@ function App() {
           } 
         />
 
-        {/* ROTA EXCLUSIVA PARA ADMINS */}
         <Route 
           path="/admin" 
           element={

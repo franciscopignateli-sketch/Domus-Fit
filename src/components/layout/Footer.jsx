@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import logo from '../../assets/Logo_Trans.png';
 
 function Footer() {
   return (
@@ -6,17 +7,20 @@ function Footer() {
       <div className="container mx-auto px-6 max-w-6xl">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 border-b border-white/10 pb-8">
           
-          {/* Marca */}
           <div>
-            <Link to="/" className="text-2xl font-extrabold tracking-tighter text-white uppercase italic mb-4 block">
-              Domus <span className="text-gym-yellow">Fit</span>
+            <Link to="/" className="block mb-4">
+              {/* Apliquei um efeito grayscale que desaparece no hover. Fica muito premium! */}
+              <img 
+                src={logo} 
+                alt="Domus Fit Logo" 
+                className="h-20 w-auto grayscale opacity-70 hover:opacity-100 hover:grayscale-0 transition-all duration-300" 
+              />
             </Link>
             <p className="text-sm">
               Mais do que um ginásio, uma casa para a tua evolução. Treino, foco e resultados.
             </p>
           </div>
 
-          {/* Links Rápidos */}
           <div>
             <h4 className="text-white font-bold uppercase mb-4">Links Rápidos</h4>
             <ul className="space-y-2 text-sm">
@@ -27,7 +31,6 @@ function Footer() {
             </ul>
           </div>
 
-          {/* Contactos */}
           <div>
             <h4 className="text-white font-bold uppercase mb-4">Contactos</h4>
             <ul className="space-y-2 text-sm">
@@ -38,6 +41,7 @@ function Footer() {
           </div>
         </div>
 
+        {/* new Date().getFullYear() atualiza o ano do copyright automaticamente sem manutenção manual */}
         <div className="text-center text-xs text-gray-600">
           &copy; {new Date().getFullYear()} Domus Fit. Projeto de PAP. Todos os direitos reservados.
         </div>

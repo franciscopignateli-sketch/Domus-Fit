@@ -2,7 +2,6 @@
 require 'db.php';
 
 try {
-    // Vai à tabela de treinadores buscar todos os registos
     $stmt = $pdo->query("SELECT id, name, specialty FROM trainers ORDER BY name ASC");
     $trainers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     

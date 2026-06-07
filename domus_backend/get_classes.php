@@ -1,9 +1,10 @@
 <?php
 require 'db.php';
 
-// Verifica se o React enviou o ID do utilizador (pode não enviar se não houver login)
 $user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
 
+// Subqueries utilizadas para calcular o número de reservas e verificar se o utilizador atual já está reservado,
+// evitando múltiplas idas à base de dados no lado do cliente.
 $sql = "SELECT c.id, c.name AS class_name, c.class_datetime, c.max_capacity,
                t.name AS trainer_name,
                (SELECT COUNT(*) FROM bookings b WHERE b.class_id = c.id) AS current_bookings,
@@ -14,7 +15,7 @@ $sql = "SELECT c.id, c.name AS class_name, c.class_datetime, c.max_capacity,
         ORDER BY c.class_datetime ASC";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$user_id]); // Passamos o user_id para a query
+$stmt->execute([$user_id]); 
 $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 echo json_encode(["success" => true, "classes" => $classes]);

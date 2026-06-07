@@ -1,21 +1,19 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CustomModal from '../components/layout/CustomModal';
+import logo from '../assets/Logo_Trans.png';
 
 function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
 
-  // Estados para o Registo
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   
-  // Estado para o Login
   const [loginInput, setLoginInput] = useState('');
-  
-  // Estados comuns
   const [password, setPassword] = useState('');
+  
   const [errorMsg, setErrorMsg] = useState(''); 
   const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'success' });
 
@@ -41,13 +39,13 @@ function Auth() {
 
       if (data.success) {
         if (!isLogin) {
-          // MODAL DE SUCESSO EM VEZ DE ALERT
           setModal({
             isOpen: true,
             title: "Bem-vindo!",
             message: "Conta criada com sucesso! Podes fazer login agora.",
             type: "success"
           });
+          
           setIsLogin(true);
           setPassword('');
           setLoginInput(username); 
@@ -59,8 +57,8 @@ function Auth() {
         setErrorMsg(data.message);
       }
     } catch (error) {
-      console.error("Erro:", error);
-      setErrorMsg("Erro ao ligar ao servidor. Verifica se o XAMPP está ligado.");
+      console.error("Erro no fetch:", error);
+      setErrorMsg("Falha na ligação ao servidor. Verifica o estado do serviço (XAMPP).");
     }
   };
 
@@ -69,6 +67,10 @@ function Auth() {
       <div className="w-full max-w-md bg-gym-dark border border-white/10 p-8 rounded-xl shadow-2xl relative overflow-hidden">
         
         <div className="absolute top-0 left-0 w-full h-1 bg-gym-yellow"></div>
+
+        <div className="flex justify-center mb-6 mt-2">
+          <img src={logo} alt="Domus Fit" className="h-16 w-auto" />
+        </div>
 
         <h2 className="text-3xl font-extrabold text-white text-center mb-8 uppercase italic">
           {isLogin ? 'Entrar na ' : 'Junta-te à '} 
@@ -82,7 +84,6 @@ function Auth() {
         )}
 
         <form className="space-y-6" onSubmit={handleAuth}>
-          
           {!isLogin ? (
             <>
               <div>
@@ -132,7 +133,6 @@ function Auth() {
         </div>
       </div>
 
-      {/* COMPONENTE DO MODAL */}
       <CustomModal 
         isOpen={modal.isOpen} 
         onClose={() => setModal({ ...modal, isOpen: false })} 

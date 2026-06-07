@@ -2,10 +2,9 @@
 require 'db.php';
 
 if (isset($_GET['user_id'])) {
-    $user_id = $_GET['user_id'];
+    $user_id = intval($_GET['user_id']);
 
     try {
-        // ADICIONADO O 'role' AQUI NA QUERY
         $stmt = $pdo->prepare("SELECT id, name, username, email, photo, plan_name, plan_expires, role FROM users WHERE id = ?");
         $stmt->execute([$user_id]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);

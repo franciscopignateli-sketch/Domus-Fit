@@ -2,9 +2,10 @@
 require 'db.php';
 
 if (isset($_GET['user_id'])) {
-    $user_id = $_GET['user_id'];
+    $user_id = intval($_GET['user_id']); 
 
-    // Adicionado c.id AS class_id para podermos usá-lo no botão de cancelar
+    // O uso de JOINs unifica os dados das tabelas bookings, classes e trainers numa única query,
+    // otimizando a performance e minimizando chamadas à base de dados.
     $sql = "SELECT 
                 b.id AS booking_id, 
                 c.id AS class_id, 

@@ -9,15 +9,24 @@ function MyBookings() {
   const user = JSON.parse(localStorage.getItem('domus_user'));
 
   useEffect(() => {
-    loadMyBookings();
-  }, []);
+    // Flag implementada para evitar atualizações de estado caso o utilizador 
+    // abandone a página de reservas antes da resposta do servidor
+    let isMounted = true;
 
-  const loadMyBookings = async () => {
-    const data = await fetchUserBookings(user.id);
-    if (data.success) {
-      setBookings(data.bookings);
-    }
-  };
+    const loadMyBookings = async () => {
+      if (!user) return;
+      const data = await fetchUserBookings(user.id);
+      if (isMounted && data.success) {
+        setBookings(data.bookings);
+      }
+    };
+
+    loadMyBookings();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]); // user adicionado como dependência do useEffect
 
   const handleCancel = async (classId) => {
     setLoadingId(classId);
@@ -25,9 +34,10 @@ function MyBookings() {
     setLoadingId(null);
 
     if (data.success) {
-      loadMyBookings();
+      // Atualização otimista do estado em vez de fazer nova chamada à API
+      // Remove a reserva cancelada diretamente do array local
+      setBookings(prevBookings => prevBookings.filter(b => b.class_id !== classId));
     } else {
-      // MODAL DE ERRO EM VEZ DE ALERT
       setModal({
         isOpen: true,
         title: "Erro ao Cancelar",
@@ -81,15 +91,7 @@ function MyBookings() {
           )}
         </div>
       </div>
-
-      {/* COMPONENTE DO MODAL */}
-      <CustomModal 
-        isOpen={modal.isOpen} 
-        onClose={() => setModal({ ...modal, isOpen: false })} 
-        title={modal.title} 
-        message={modal.message} 
-        type={modal.type} 
-      />
+      <CustomModal isOpen={modal.isOpen} onClose={() => setModal({ ...modal, isOpen: false })} title={modal.title} message={modal.message} type={modal.type} />
     </div>
   );
 }

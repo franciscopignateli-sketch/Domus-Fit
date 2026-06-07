@@ -2,22 +2,22 @@
 require 'db.php';
 
 if (isset($_GET['user_id'])) {
-    $user_id = $_GET['user_id'];
+    $user_id = intval($_GET['user_id']);
 
     try {
-        // 1. Descobrir qual é o ID interno do treinador associado a esta conta
+        // Primeiro mapeamos o utilizador logado para o respetivo registo técnico de treinador
         $stmtTrainer = $pdo->prepare("SELECT id FROM trainers WHERE user_id = ?");
         $stmtTrainer->execute([$user_id]);
         $trainer = $stmtTrainer->fetch(PDO::FETCH_ASSOC);
 
         if (!$trainer) {
-            echo json_encode(["success" => false, "message" => "Perfil de treinador não encontrado para este utilizador."]);
+            echo json_encode(["success" => false, "message" => "Perfil de treinador não encontrado."]);
             exit;
         }
 
         $trainer_id = $trainer['id'];
 
-        // 2. Ir buscar apenas as aulas deste treinador e contar quantas pessoas já marcaram
+        // Extraímos as turmas apenas deste treinador com a contagem de lotação atualizada
         $stmtClasses = $pdo->prepare("
             SELECT 
                 c.id, 
@@ -29,6 +29,7 @@ if (isset($_GET['user_id'])) {
             WHERE c.trainer_id = ?
             ORDER BY c.class_datetime ASC
         ");
+        
         $stmtClasses->execute([$trainer_id]);
         $classes = $stmtClasses->fetchAll(PDO::FETCH_ASSOC);
 

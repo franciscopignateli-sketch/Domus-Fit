@@ -5,10 +5,11 @@ $data = json_decode(file_get_contents("php://input"));
 
 if (isset($data->name) && isset($data->trainer_id) && isset($data->class_datetime) && isset($data->max_capacity)) {
     
+    // Função trim aplicada para garantir que não entram espaços em branco desnecessários na BD
     $name = trim($data->name);
     $trainer_id = $data->trainer_id;
     $class_datetime = $data->class_datetime;
-    $max_capacity = $data->max_capacity;
+    $max_capacity = intval($data->max_capacity);
 
     try {
         $stmt = $pdo->prepare("INSERT INTO classes (name, trainer_id, class_datetime, max_capacity) VALUES (?, ?, ?, ?)");

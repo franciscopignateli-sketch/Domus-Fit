@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import logo from '../../assets/Logo_Trans.png';
 
 function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isLogged, setIsLogged] = useState(false);
   const [userRole, setUserRole] = useState(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // ESTADO DO MENU MOBILE
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // Verifica o estado de autenticação lendo o localStorage sempre que a rota da aplicação muda
   useEffect(() => {
     const userString = localStorage.getItem('domus_user');
     if (userString) {
@@ -20,11 +22,12 @@ function Navbar() {
     }
   }, [location]);
 
-  // Fechar o menu automaticamente sempre que mudamos de página no telemóvel
+  // Garante que o menu mobile é fechado ao navegar para uma nova página
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location]);
 
+  // Limpa a sessão local e redireciona para a página de entrada
   const handleLogout = () => {
     localStorage.removeItem('domus_user');
     navigate('/login');
@@ -34,11 +37,10 @@ function Navbar() {
   return (
     <nav className="bg-gym-black/95 backdrop-blur-md text-white p-4 fixed w-full z-50 border-b border-white/10">
       <div className="container mx-auto flex justify-between items-center relative">
-        <Link to="/" className="text-2xl font-extrabold tracking-tighter text-gym-yellow uppercase italic">
-          Domus Fit
+        <Link to="/" className="flex items-center">
+          <img src={logo} alt="Domus Fit Logo" className="h-13 w-auto hover:scale-105 transition-transform" />
         </Link>
         
-        {/* BOTÃO HAMBÚRGUER MOBILE */}
         <button 
           onClick={() => setIsMenuOpen(!isMenuOpen)} 
           className="md:hidden text-white hover:text-gym-yellow transition-colors focus:outline-none"
@@ -52,7 +54,6 @@ function Navbar() {
           </svg>
         </button>
 
-        {/* NAVEGAÇÃO DESKTOP */}
         <div className="hidden md:flex gap-8 font-semibold uppercase text-sm tracking-wider items-center">
           <Link to="/" className="hover:text-gym-yellow transition-all">Home</Link>
           <Link to="/about" className="hover:text-gym-yellow transition-all">About</Link>
@@ -91,7 +92,6 @@ function Navbar() {
           )}
         </div>
 
-        {/* NAVEGAÇÃO MOBILE (Aparece quando o botão é clicado) */}
         {isMenuOpen && (
           <div className="absolute top-15 left-0 w-full bg-gym-black/95 border-b border-white/10 md:hidden flex flex-col p-6 gap-6 shadow-2xl animate-fade-in z-50">
             <Link to="/" className="hover:text-gym-yellow font-bold uppercase tracking-wider transition-all">Home</Link>

@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { fetchUserBookings, fetchUserProfile, updateUserProfile, uploadUserPhoto } from '../services/gymApi';
 import CustomModal from '../components/layout/CustomModal';
 
+// Array de dicas colocado fora da função do componente para evitar ser recriado 
+// na memória sempre que a página for renderizada.
 const fitnessTips = [
   "Mantém-te hidratado! Bebe pelo menos 2 litros de água por dia.",
   "O descanso é tão importante quanto o treino. Dorme bem!",
-  "A consistência é a chave para alcancares os teus objetivos.",
+  "A consistência é a chave para alcançares os teus objetivos.",
   "Não te esqueças de alongar após o treino para evitar lesões.",
   "A nutrição é o combustível do teu corpo. Escolhe bem o que comes!",
   "Cada treino conta, por mais curto que seja.",
@@ -35,69 +37,78 @@ function Profile() {
       return;
     }
     
-    // Escolhe uma dica aleatória ao carregar o componente
     setRandomTip(fitnessTips[Math.floor(Math.random() * fitnessTips.length)]);
     
-    loadFullProfile(localUser.id);
-  }, [navigate]);
+    // Adicionei esta flag para resolver um bug chato: se a API demorasse a responder 
+    // e eu mudasse de página, o React atirava um erro na consola por tentar 
+    // fazer um set state num componente desmontado.
+    let isMounted = true;
 
-  const loadFullProfile = async (userId) => {
-    const profileData = await fetchUserProfile(userId);
-    if (profileData.success) {
-      const u = profileData.user;
+    const loadFullProfile = async (userId) => {
+      const profileData = await fetchUserProfile(userId);
       
-      let daysLeft = 0;
-      let planActive = false;
-      let planText = "";
+      if (isMounted && profileData.success) {
+        const u = profileData.user;
+        
+        let daysLeft = 0;
+        let planActive = false;
+        let planText = "";
 
-      if (u.role === 'admin') {
-        planActive = true;
-        planText = "Administrador";
-      } else if (u.role === 'trainer') {
-        planActive = true;
-        planText = "Treinador / Staff";
-      } else {
-        if (u.plan_expires) {
-          const expires = new Date(u.plan_expires);
-          const today = new Date();
-          const diffTime = expires - today;
-          daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          planActive = daysLeft > 0;
+        if (u.role === 'admin') {
+          planActive = true;
+          planText = "Administrador";
+        } else if (u.role === 'trainer') {
+          planActive = true;
+          planText = "Treinador / Staff";
+        } else {
+          if (u.plan_expires) {
+            const expires = new Date(u.plan_expires);
+            const today = new Date();
+            const diffTime = expires - today;
+            daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            planActive = daysLeft > 0;
+          }
+          planText = u.plan_name && planActive ? u.plan_name : "Sem Plano Ativo";
         }
-        planText = u.plan_name && planActive ? u.plan_name : "Sem Plano Ativo";
-      }
 
-      setUser({
-        id: u.id,
-        name: u.name,
-        username: u.username,
-        email: u.email,
-        role: u.role,
-        photo: u.photo || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-        plan: planText,
-        daysLeft: daysLeft,
-        planActive: planActive,
-        memberNumber: u.role === 'user' ? `DOMUS-${String(u.id).padStart(4, '0')}` : `STAFF-${String(u.id).padStart(4, '0')}`
-      });
-
-      setEditName(u.name);
-    }
-    
-    const bookingsData = await fetchUserBookings(userId);
-    if (bookingsData.success && bookingsData.bookings.length > 0) {
-      const now = new Date();
-      const futureBookings = bookingsData.bookings.filter(b => new Date(b.class_datetime) >= now);
-      if (futureBookings.length > 0) {
-        const upcoming = futureBookings[0];
-        const dateObj = new Date(upcoming.class_datetime);
-        setNextClass({
-          name: upcoming.class_name,
-          trainer: upcoming.trainer_name,
-          date: `${dateObj.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' })}, às ${dateObj.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}`
+        setUser({
+          id: u.id,
+          name: u.name,
+          username: u.username,
+          email: u.email,
+          role: u.role,
+          photo: u.photo || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+          plan: planText,
+          daysLeft: daysLeft,
+          planActive: planActive,
+          memberNumber: u.role === 'user' ? `DOMUS-${String(u.id).padStart(4, '0')}` : `STAFF-${String(u.id).padStart(4, '0')}`
         });
+
+        setEditName(u.name);
       }
-    }
-  };
+      
+      const bookingsData = await fetchUserBookings(userId);
+      if (isMounted && bookingsData.success && bookingsData.bookings.length > 0) {
+        const now = new Date();
+        const futureBookings = bookingsData.bookings.filter(b => new Date(b.class_datetime) >= now);
+        if (futureBookings.length > 0) {
+          const upcoming = futureBookings[0];
+          const dateObj = new Date(upcoming.class_datetime);
+          setNextClass({
+            name: upcoming.class_name,
+            trainer: upcoming.trainer_name,
+            date: `${dateObj.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' })}, às ${dateObj.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}`
+          });
+        }
+      }
+    };
+
+    loadFullProfile(localUser.id);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate]);
 
   const handlePhotoClick = () => {
     if (!isUploading) fileInputRef.current.click();
@@ -113,6 +124,8 @@ function Profile() {
 
     if (result.success) {
       setUser({ ...user, photo: result.photo_url });
+      
+      // Atualizo também no localStorage para a foto não desaparecer num F5
       const localUser = JSON.parse(localStorage.getItem('domus_user'));
       localStorage.setItem('domus_user', JSON.stringify({ ...localUser, photo: result.photo_url }));
     } else {
@@ -133,6 +146,7 @@ function Profile() {
     if (result.success) {
       setUser({ ...user, name: editName });
       setIsEditingName(false);
+      
       const localUser = JSON.parse(localStorage.getItem('domus_user'));
       localStorage.setItem('domus_user', JSON.stringify({ ...localUser, name: editName }));
       
@@ -148,7 +162,6 @@ function Profile() {
     <div className="min-h-screen bg-gym-black pt-24 pb-12 px-6 relative">
       <div className="container mx-auto max-w-5xl">
         
-        {/* CABEÇALHO PERFIL */}
         <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6 mb-12 bg-gym-dark p-8 rounded-xl border border-white/5">
           <div className="flex flex-col md:flex-row items-center gap-6">
             
@@ -213,7 +226,6 @@ function Profile() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           
-          {/* COLUNA ESQUERDA: QR Code */}
           <div className="bg-gym-dark p-8 rounded-xl border border-white/10 flex flex-col items-center text-center shadow-2xl h-fit">
             <h3 className="text-xl font-bold text-white uppercase mb-6">Passe de Entrada</h3>
             <div className={`p-4 rounded-lg mb-4 ${user.planActive ? "bg-white" : "bg-red-500/20 opacity-50"}`}>
@@ -231,7 +243,6 @@ function Profile() {
             )}
           </div>
 
-          {/* COLUNA DIREITA */}
           <div className="md:col-span-2 space-y-6">
             
             <div className="bg-linear-to-r from-gym-dark to-black p-6 rounded-xl border-l-4 border-gym-yellow">
@@ -290,7 +301,6 @@ function Profile() {
               </div>
             )}
 
-            {/* Ações Rápidas */}
             <div className="grid grid-cols-2 gap-4">
                 <Link to="/membership" className="bg-white/5 hover:bg-white/10 p-5 rounded-lg text-center border border-dashed border-gray-600 hover:border-gym-yellow transition-colors cursor-pointer">
                     <span className="block text-2xl mb-2">⭐</span>
@@ -306,7 +316,6 @@ function Profile() {
         </div>
       </div>
       
-      {/* COMPONENTE DO MODAL */}
       <CustomModal 
         isOpen={modal.isOpen} 
         onClose={() => setModal({ ...modal, isOpen: false })} 

@@ -12,13 +12,9 @@ function Home() {
       <HeroCarousel />
       <DescriptionSection />
       <ClassesSection />
-      
-      {/* Novas Secções que substituem o espaço vazio */}
       <TrainersSection />
       <CtaSection />
       <Footer />
-
-      {/* Scroll to Top */}
       <ScrollToTop />
     </>
   );

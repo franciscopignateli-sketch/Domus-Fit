@@ -3,6 +3,35 @@ import { useNavigate } from 'react-router-dom';
 import { subscribePlan } from '../services/gymApi';
 import CustomModal from '../components/layout/CustomModal';
 
+// Array de dados estático movido para fora do ciclo de vida do componente
+// Evita a recriação da lista de planos em cada re-render da interface
+const plansData = [
+  {
+    name: "Iron Plan",
+    price: "29€",
+    period: "/ mês",
+    features: ["Acesso livre horário reduzido", "1 Aula de grupo por semana", "Balneários"],
+    color: "border-gray-500",
+    btnColor: "bg-gray-500 hover:bg-gray-400 text-white"
+  },
+  {
+    name: "Gold Plan",
+    price: "39€",
+    period: "/ mês",
+    features: ["Acesso livre trânsito total", "Aulas de grupo ilimitadas", "Avaliação Física Mensal", "Toalha incluída"],
+    color: "border-gym-yellow",
+    btnColor: "bg-gym-yellow hover:bg-white text-black"
+  },
+  {
+    name: "Elite Plan",
+    price: "59€",
+    period: "/ mês",
+    features: ["Tudo do Gold Plan", "1 Sessão Personal Trainer/semana", "Acesso ao Spa", "Nutrição incluída"],
+    color: "border-blue-500",
+    btnColor: "bg-blue-500 hover:bg-blue-400 text-white"
+  }
+];
+
 function Membership() {
   const navigate = useNavigate();
   const [loadingPlan, setLoadingPlan] = useState(null);
@@ -19,7 +48,7 @@ function Membership() {
         message: "Precisas de fazer login para subscrever um plano!",
         type: "error"
       });
-      // Dá tempo para a pessoa ler antes de a mandar para o login
+      // Atraso intencional para permitir a leitura do modal antes do redirecionamento automático
       setTimeout(() => navigate('/login'), 2000);
       return;
     }
@@ -29,17 +58,14 @@ function Membership() {
     setLoadingPlan(null);
 
     if (data.success) {
-      // Pop-up de SUCESSO
       setModal({
         isOpen: true,
-        title: "Subscrição Ativa! 🎉",
-        message: `Parabéns! Subscreveste o ${planName}. O teu plano é válido até ${data.plan_data.plan_expires}.`,
+        title: "Subscrição Ativa!",
+        message: `Subscreveste o ${planName}. O teu plano é válido até ${data.plan_data.plan_expires}.`,
         type: "success"
       });
-      // Espera 2.5 segundos para a pessoa ler e depois manda para o perfil
       setTimeout(() => navigate('/profile'), 2500);
     } else {
-      // Pop-up de ERRO
       setModal({
         isOpen: true,
         title: "Erro na Subscrição",
@@ -49,34 +75,6 @@ function Membership() {
     }
   };
 
-  const plans = [
-    {
-      name: "Iron Plan",
-      price: "29€",
-      period: "/ mês",
-      features: ["Acesso livre horário reduzido", "1 Aula de grupo por semana", "Balneários"],
-      color: "border-gray-500",
-      btnColor: "bg-gray-500 hover:bg-gray-400 text-white"
-    },
-    {
-      name: "Gold Plan",
-      price: "39€",
-      period: "/ mês",
-      features: ["Acesso livre trânsito total", "Aulas de grupo ilimitadas", "Avaliação Física Mensal", "Toalha incluída"],
-      color: "border-gym-yellow",
-      btnColor: "bg-gym-yellow hover:bg-white text-black"
-    },
-    {
-      name: "Elite Plan",
-      price: "59€",
-      period: "/ mês",
-      features: ["Tudo do Gold Plan", "1 Sessão Personal Trainer/semana", "Acesso ao Spa", "Nutrição incluída"],
-      color: "border-blue-500",
-      btnColor: "bg-blue-500 hover:bg-blue-400 text-white"
-    }
-  ];
-
-  // Variável para saber se é Staff (Admin ou Treinador)
   const isStaff = user && user.role !== 'user';
 
   return (
@@ -92,7 +90,7 @@ function Membership() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {plans.map((plan) => (
+          {plansData.map((plan) => (
             <div 
               key={plan.name} 
               className={`bg-gym-dark p-8 rounded-2xl border-2 flex flex-col transition-transform hover:-translate-y-2 ${plan.color} ${plan.name === "Gold Plan" ? "shadow-[0_0_30px_rgba(252,211,77,0.15)] relative" : ""}`}
@@ -137,13 +135,7 @@ function Membership() {
           ))}
         </div>
       </div>
-      <CustomModal 
-        isOpen={modal.isOpen} 
-        onClose={() => setModal({ ...modal, isOpen: false })} 
-        title={modal.title} 
-        message={modal.message} 
-        type={modal.type} 
-      />
+      <CustomModal isOpen={modal.isOpen} onClose={() => setModal({ ...modal, isOpen: false })} title={modal.title} message={modal.message} type={modal.type} />
     </div>
   );
 }

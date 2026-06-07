@@ -3,6 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { createGymClass, fetchGymClasses, fetchTrainers, createTrainer } from '../services/gymApi';
 import CustomModal from '../components/layout/CustomModal';
 
+// Cálculo extraído do componente para evitar recálculos desnecessários a cada re-render.
+// Mantém a sincronia com o timezone local para validação dos inputs datetime-local.
+const getMinDateTime = () => {
+  const now = new Date();
+  const tzOffset = now.getTimezoneOffset() * 60000; 
+  return new Date(now - tzOffset).toISOString().slice(0, 16);
+};
+
 function AdminPanel() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('classes');
@@ -24,12 +32,6 @@ function AdminPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  // CALCULAR DATA MÍNIMA PERMITIDA (Hoje)
-  const getMinDateTime = () => {
-    const now = new Date();
-    const tzOffset = now.getTimezoneOffset() * 60000; 
-    return new Date(now - tzOffset).toISOString().slice(0, 16);
-  };
   const minDateTime = getMinDateTime();
 
   useEffect(() => {
@@ -39,17 +41,26 @@ function AdminPanel() {
       setTimeout(() => navigate('/'), 2000);
       return;
     }
+    
+    // Agrupamento das chamadas assíncronas iniciais para resolver dependências de listagens
+    const loadInitialData = async () => {
+      const trainersData = await fetchTrainers();
+      if (trainersData.success) {
+        setTrainers(trainersData.trainers);
+        if (trainersData.trainers.length > 0) setTrainerId(trainersData.trainers[0].id);
+      }
+      const classesData = await fetchGymClasses();
+      if (classesData.success) setClasses(classesData.classes);
+    };
+
     loadInitialData();
   }, [navigate]);
 
-  const loadInitialData = async () => {
-    const trainersData = await fetchTrainers();
-    if (trainersData.success) {
-      setTrainers(trainersData.trainers);
-      if (trainersData.trainers.length > 0) setTrainerId(trainersData.trainers[0].id);
-    }
+  const loadClassesAndTrainers = async () => {
     const classesData = await fetchGymClasses();
     if (classesData.success) setClasses(classesData.classes);
+    const trainersData = await fetchTrainers();
+    if (trainersData.success) setTrainers(trainersData.trainers);
   };
 
   const handleCreateClass = async (e) => {
@@ -59,7 +70,7 @@ function AdminPanel() {
       return;
     }
     
-    // Verificação dupla no lado do cliente
+    // Prevenção client-side adicional contra injeção de dados manipulados pelo DOM
     if (classDatetime < minDateTime) {
       setMessage({ type: 'error', text: 'Não podes criar aulas com datas no passado!' });
       return;
@@ -78,11 +89,10 @@ function AdminPanel() {
     setIsLoading(false);
 
     if (result.success) {
-      setMessage({ type: 'success', text: 'Excelente! Aula criada com sucesso.' });
+      setMessage({ type: 'success', text: 'Aula criada com sucesso.' });
       setClassName('');
       setClassDatetime('');
-      const classesData = await fetchGymClasses();
-      if (classesData.success) setClasses(classesData.classes);
+      loadClassesAndTrainers();
     } else {
       setMessage({ type: 'error', text: result.message });
     }
@@ -105,9 +115,9 @@ function AdminPanel() {
     setIsLoading(false);
 
     if (result.success) {
-      setMessage({ type: 'success', text: 'Sucesso! Novo treinador adicionado.' });
+      setMessage({ type: 'success', text: 'Novo treinador adicionado.' });
       setTName(''); setTUsername(''); setTEmail(''); setTPassword(''); setTSpecialty('');
-      loadInitialData();
+      loadClassesAndTrainers();
     } else {
       setMessage({ type: 'error', text: result.message });
     }
@@ -154,7 +164,6 @@ function AdminPanel() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-400 text-sm mb-2 font-semibold">Data e Hora</label>
-                    {/* BLOQUEIO DE DATAS PASSADAS ADICIONADO AQUI */}
                     <input type="datetime-local" min={minDateTime} value={classDatetime} onChange={(e) => setClassDatetime(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none" />
                   </div>
                   <div>
@@ -214,7 +223,7 @@ function AdminPanel() {
                 </div>
                 <div>
                   <label className="block text-gray-400 text-sm mb-1.5 font-semibold">Username de Acesso</label>
-                  <input type="text" value={tUsername} onChange={(e) => setTUsername(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none" placeholder="ex: carlos_trainer" />
+                  <input type="text" value={tUsername} onChange={(e) => setTUsername(e.target.value.toLowerCase())} className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-gym-yellow focus:outline-none" placeholder="ex: carlos_trainer" />
                 </div>
                 <div>
                   <label className="block text-gray-400 text-sm mb-1.5 font-semibold">Email Institucional</label>
