@@ -12,6 +12,7 @@ import AdminPanel from './pages/AdminPanel';
 import TrainerPanel from './pages/TrainerPanel';
 import Exercises from './pages/Exercises';
 import ProtectedRoute from './routes/ProtectedRoute';
+import Contact from './pages/Contact';
 
 function App() {
   return (
@@ -35,6 +36,8 @@ function App() {
             </ProtectedRoute>
           } 
         />
+
+        <Route path="/contact" element={<Contact />} />
         
         <Route 
           path="/my-bookings" 

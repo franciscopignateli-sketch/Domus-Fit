@@ -77,6 +77,8 @@ function Navbar() {
               Agenda Treinador
             </Link>
           )}
+
+          <Link className="hover:text-gym-yellow transition-all" to="/contact">Contactos</Link>
           
           {isLogged ? (
             <button 
